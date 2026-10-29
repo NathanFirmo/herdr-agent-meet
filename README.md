@@ -1,5 +1,7 @@
 # Agent Meet
 
+<img width="1922" height="1079" alt="image" src="https://github.com/user-attachments/assets/f4b4c6c6-a531-44ca-8ff3-b5face40161e" />
+
 A video call where your coding agents report to you. Every agent running in your
 Herdr session joins as a participant. When one writes something
 new, Agent Meet summarizes it, speaks it out loud, and shows it as captions,
