@@ -20,6 +20,9 @@ type Claude struct {
 
 	mu       sync.Mutex
 	sessions map[string]*session
+	// waiting holds agents seen before their transcript existed; Claude Code
+	// creates it on the first message, so it is read from the start.
+	waiting map[string]bool
 }
 
 type session struct {
@@ -31,13 +34,14 @@ type session struct {
 
 // NewClaude takes config directories as glob patterns, e.g. "~/.claude*".
 func NewClaude(configDirs []string) *Claude {
-	return &Claude{configDirs: configDirs, sessions: map[string]*session{}}
+	return &Claude{configDirs: configDirs, sessions: map[string]*session{}, waiting: map[string]bool{}}
 }
 
-// NewMessages starts at the end of a newly found transcript, so history is not
-// replayed, and then returns what was appended since the previous call.
+// NewMessages starts at the end of a transcript that already existed when the
+// agent was first seen, so history is not replayed, and then returns what was
+// appended since the previous call.
 func (c *Claude) NewMessages(agent meet.Agent) ([]string, bool, error) {
-	if agent.Kind != "claude" || agent.SessionID == "" {
+	if agent.Kind != "claude" {
 		return nil, false, nil
 	}
 
@@ -46,16 +50,25 @@ func (c *Claude) NewMessages(agent meet.Agent) ([]string, bool, error) {
 
 	s, known := c.sessions[agent.SessionID]
 	if !known {
-		path := c.find(agent.SessionID)
+		path := ""
+		if agent.SessionID != "" {
+			path = c.find(agent.SessionID)
+		}
 		if path == "" {
+			c.waiting[agent.ID] = true
 			return nil, false, nil
 		}
-		info, err := os.Stat(path)
-		if err != nil {
-			return nil, false, err
+		s = &session{path: path}
+		c.sessions[agent.SessionID] = s
+		if !c.waiting[agent.ID] {
+			info, err := os.Stat(path)
+			if err != nil {
+				return nil, false, err
+			}
+			s.offset = info.Size()
+			return nil, true, nil
 		}
-		c.sessions[agent.SessionID] = &session{path: path, offset: info.Size()}
-		return nil, true, nil
+		delete(c.waiting, agent.ID)
 	}
 
 	messages, err := s.readNew()

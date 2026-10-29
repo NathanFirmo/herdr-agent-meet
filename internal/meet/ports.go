@@ -18,6 +18,7 @@ type Agent struct {
 	Kind      string
 	Status    string
 	SessionID string
+	Dir       string
 }
 
 // AgentSource lists the agents taking part in the call and reads what they
@@ -80,6 +81,21 @@ type AgentMessenger interface {
 // agent, and the room falls back to parsing the screen.
 type MessageSource interface {
 	NewMessages(agent Agent) (messages []string, ok bool, err error)
+}
+
+// LaunchRequest describes a new agent to start. Name is how it shows in the
+// call, Command is the shell command that starts it, and Prompt, when set, is
+// its first message.
+type LaunchRequest struct {
+	Name    string
+	Command string
+	Dir     string
+	Prompt  string
+}
+
+// AgentLauncher starts a new agent in a terminal of its own and returns its ID.
+type AgentLauncher interface {
+	Launch(ctx context.Context, request LaunchRequest) (string, error)
 }
 
 // AgentCloser ends an agent for good, closing the terminal it runs in.

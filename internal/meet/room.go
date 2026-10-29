@@ -27,6 +27,7 @@ type Participant struct {
 	Voice    string    `json:"voice"`
 	Activity *Activity `json:"activity,omitempty"`
 	Prompt   *Prompt   `json:"prompt,omitempty"`
+	Dir      string    `json:"dir,omitempty"`
 	// OriginalName is the name from the agent source, set when the user renamed the participant.
 	OriginalName string `json:"originalName,omitempty"`
 }
@@ -66,6 +67,7 @@ type Config struct {
 	// Controller answers prompts on the agent's screen.
 	Controller AgentController
 	Closer     AgentCloser
+	Launcher   AgentLauncher
 	// Messages is optional; agents it cannot follow are read from their screen.
 	Messages   MessageSource
 	Parsers    map[string]ScreenParser
@@ -198,9 +200,9 @@ func (r *Room) upsertParticipant(agent Agent) (becameBlocked bool) {
 	if alias := r.names[agent.ID]; alias != "" {
 		name, original = alias, agent.Name
 	}
-	changed := !exists || p.Name != name || p.OriginalName != original || p.Status != agent.Status || p.Kind != agent.Kind
+	changed := !exists || p.Name != name || p.OriginalName != original || p.Status != agent.Status || p.Kind != agent.Kind || p.Dir != agent.Dir
 	becameBlocked = exists && p.Status != StatusBlocked && agent.Status == StatusBlocked
-	p.Name, p.OriginalName, p.Status, p.Kind = name, original, agent.Status, agent.Kind
+	p.Name, p.OriginalName, p.Status, p.Kind, p.Dir = name, original, agent.Status, agent.Kind, agent.Dir
 	if changed {
 		r.broadcastLocked(Event{Type: "participants", Participants: r.participantsLocked()})
 	}

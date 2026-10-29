@@ -57,6 +57,7 @@ func run() error {
 		Messenger:  source,
 		Controller: source,
 		Closer:     source,
+		Launcher:   source,
 		Messages:   newMessageSource(home),
 		Parsers:    map[string]meet.ScreenParser{"claude": parser.ClaudeCode{}},
 		Summarizer: summary,

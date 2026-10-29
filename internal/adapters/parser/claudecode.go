@@ -21,6 +21,8 @@ var (
 	// While a turn runs, a spinner line shows its elapsed time, e.g. "✽ Pondering… (11m 30s · ↓ 8.8k tokens)".
 	spinner  = regexp.MustCompile(`^\S\s+\S+…\s+\(((?:\d+h\s+)?(?:\d+m\s+)?\d+s)`)
 	duration = regexp.MustCompile(`(\d+)([hms])`)
+	// UI hints such as "high · /effort" also start with "●" but are not messages.
+	slashHint = regexp.MustCompile(`·\s*/[a-z][a-z-]*$`)
 	// Bullet markers mean nothing out loud; numbered items keep their numbers.
 	listBullet = regexp.MustCompile(`^[-*•]\s+`)
 )
@@ -76,7 +78,7 @@ func (ClaudeCode) Parse(screen string) meet.ParsedScreen {
 					runningTool = &meet.ScreenActivity{Kind: meet.ActivityTool, Label: paragraph, Elapsed: parseDuration(match[1])}
 				}
 			}
-			if len([]rune(paragraph)) > minLength {
+			if len([]rune(paragraph)) > minLength && !slashHint.MatchString(paragraph) {
 				parsed.Paragraphs = append(parsed.Paragraphs, paragraph)
 			}
 		}

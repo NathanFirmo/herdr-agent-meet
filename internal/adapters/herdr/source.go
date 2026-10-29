@@ -29,6 +29,7 @@ type agent struct {
 	Status        string `json:"agent_status"`
 	Name          string `json:"name"`
 	TerminalTitle string `json:"terminal_title_stripped"`
+	CWD           string `json:"cwd"`
 	Session       struct {
 		Value string `json:"value"`
 	} `json:"agent_session"`
@@ -54,7 +55,7 @@ func (s *Source) ListAgents(ctx context.Context) ([]meet.Agent, error) {
 	}
 	agents := make([]meet.Agent, 0, len(result.Agents))
 	for _, a := range result.Agents {
-		agents = append(agents, meet.Agent{ID: a.PaneID, Name: a.displayName(), Kind: a.Kind, Status: a.Status, SessionID: a.Session.Value})
+		agents = append(agents, meet.Agent{ID: a.PaneID, Name: a.displayName(), Kind: a.Kind, Status: a.Status, SessionID: a.Session.Value, Dir: a.CWD})
 	}
 	return agents, nil
 }

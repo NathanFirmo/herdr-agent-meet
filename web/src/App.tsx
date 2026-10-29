@@ -56,6 +56,7 @@ export default function App() {
             onSend={meeting.sendMessage}
             onRename={meeting.renameParticipant}
             onRemove={meeting.removeParticipant}
+            onLaunch={meeting.launchAgent}
             draft={draft}
             onDraftChange={setDraft}
             onClose={() => setPanel(null)}

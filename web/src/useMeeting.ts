@@ -244,5 +244,14 @@ export function useMeeting(joined: boolean, held: boolean) {
     if (!response.ok) throw new Error(await response.text())
   }, [])
 
-  return { pending, participants, renameParticipant, removeParticipant, answerPrompt, speeches, messages, sendMessage, connected, current, muted, setMuted, toasts }
+  const launchAgent = useCallback(async (agent: { name: string; command: string; dir: string; prompt: string }) => {
+    const response = await fetch('/api/agents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(agent),
+    })
+    if (!response.ok) throw new Error((await response.text()).trim())
+  }, [])
+
+  return { pending, participants, renameParticipant, removeParticipant, launchAgent, answerPrompt, speeches, messages, sendMessage, connected, current, muted, setMuted, toasts }
 }

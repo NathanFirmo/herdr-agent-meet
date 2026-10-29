@@ -36,7 +36,7 @@ func parsePrompt(rows []string) *meet.Prompt {
 		}
 	}
 	if highlighted < 0 {
-		return nil
+		return parseUnnumberedPrompt(rows)
 	}
 
 	first := highlighted
@@ -119,4 +119,50 @@ func truncate(text string, limit int) string {
 		return string(runes[:limit]) + "…"
 	}
 	return text
+}
+
+// parseUnnumberedPrompt reads dialogs whose options carry no numbers, such as
+// the folder trust check: the highlighted option starts with "❯" and its
+// siblings sit indented on the rows around it. Options are numbered in order.
+func parseUnnumberedPrompt(rows []string) *meet.Prompt {
+	highlighted := -1
+	for i := len(rows) - 1; i >= 0; i-- {
+		if strings.HasPrefix(promptText(rows[i]), selectedMarker+" ") {
+			highlighted = i
+			break
+		}
+	}
+	if highlighted < 0 {
+		return nil
+	}
+
+	isOption := func(i int) bool {
+		text := promptText(rows[i])
+		return text != "" && !promptHint.MatchString(text) && (i == highlighted || strings.HasPrefix(rows[i], "   "))
+	}
+	first, last := highlighted, highlighted
+	for first > 0 && isOption(first-1) {
+		first--
+	}
+	for last < len(rows)-1 && isOption(last+1) {
+		last++
+	}
+
+	prompt := &meet.Prompt{}
+	for i := first; i <= last; i++ {
+		label := strings.TrimSpace(strings.TrimPrefix(promptText(rows[i]), selectedMarker))
+		if i == highlighted {
+			prompt.Selected = len(prompt.Options)
+		}
+		prompt.Options = append(prompt.Options, meet.PromptOption{Number: len(prompt.Options) + 1, Label: label})
+	}
+
+	var question []string
+	for i := first - 1; i >= 0 && !isSeparator(rows[i]); i-- {
+		if text := promptText(rows[i]); text != "" {
+			question = append([]string{text}, question...)
+		}
+	}
+	prompt.Question = truncate(strings.Join(question, " "), maxContext)
+	return prompt
 }

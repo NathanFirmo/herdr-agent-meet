@@ -9,6 +9,11 @@ like a teammate giving you a status update.
 - A spinner marks agents at work. A raised hand and a toast mark an agent
   waiting for your approval.
 - Captions, a chat panel and a participant list.
+- Chat with @mentions and images, delivered straight into an agent's session.
+- Answer an agent's questions and approvals from a card in the call.
+- Start a new agent from the call: it opens a Herdr workspace and runs any
+  shell command, so aliases and flags work. Rename or close agents from the
+  participant list.
 
 ## How it works
 

@@ -1,10 +1,11 @@
-import { Hand, Loader2, Pencil, Trash2, X } from 'lucide-react'
+import { Hand, Loader2, Pencil, Trash2, UserPlus, X } from 'lucide-react'
 import { useState } from 'react'
 import { avatarColor, initials } from '../avatar'
 import type { ChatMessage, Participant, Speech } from '../types'
 import { ActivityBadge } from './ActivityBadge'
 import { AudioTest } from './AudioTest'
 import { Chat } from './Chat'
+import { NewAgentDialog } from './NewAgentDialog'
 import type { Panel } from './ControlBar'
 
 interface SidePanelProps {
@@ -16,6 +17,7 @@ interface SidePanelProps {
   onSend: (text: string, mentions: string[], images: File[]) => Promise<void>
   onRename: (id: string, name: string) => Promise<void>
   onRemove: (id: string) => Promise<void>
+  onLaunch: (agent: { name: string; command: string; dir: string; prompt: string }) => Promise<void>
   draft: string
   onDraftChange: (draft: string) => void
   onClose: () => void
@@ -23,7 +25,7 @@ interface SidePanelProps {
 
 const TITLES = { people: 'Participantes', chat: 'Mensagens na chamada', info: 'Detalhes da reunião' }
 
-export function SidePanel({ panel, participants, speeches, messages, connected, onSend, onRename, onRemove, draft, onDraftChange, onClose }: SidePanelProps) {
+export function SidePanel({ panel, participants, speeches, messages, connected, onSend, onRename, onRemove, onLaunch, draft, onDraftChange, onClose }: SidePanelProps) {
   return (
     <aside className="side-panel">
       <header>
@@ -32,7 +34,7 @@ export function SidePanel({ panel, participants, speeches, messages, connected, 
           <X size={20} />
         </button>
       </header>
-      {panel === 'people' && <People participants={participants} onRename={onRename} onRemove={onRemove} />}
+      {panel === 'people' && <People participants={participants} onRename={onRename} onRemove={onRemove} onLaunch={onLaunch} />}
       {panel === 'chat' && <Chat participants={participants} speeches={speeches} messages={messages} onSend={onSend} draft={draft} onDraftChange={onDraftChange} />}
       {panel === 'info' && (
         <div className="panel-body info">
@@ -52,11 +54,21 @@ interface PeopleProps {
   participants: Participant[]
   onRename: (id: string, name: string) => Promise<void>
   onRemove: (id: string) => Promise<void>
+  onLaunch: (agent: { name: string; command: string; dir: string; prompt: string }) => Promise<void>
 }
 
-function People({ participants, onRename, onRemove }: PeopleProps) {
+function People({ participants, onRename, onRemove, onLaunch }: PeopleProps) {
+  const [adding, setAdding] = useState(false)
+  const dirs = [...new Set(participants.map((participant) => participant.dir).filter((dir): dir is string => Boolean(dir)))]
+
   return (
     <ul className="panel-body people">
+      <li className="add-agent">
+        <button className="add-agent-button" onClick={() => setAdding(true)}>
+          <UserPlus size={18} /> Novo agente
+        </button>
+        {adding && <NewAgentDialog dirs={dirs} onLaunch={onLaunch} onClose={() => setAdding(false)} />}
+      </li>
       <li>
         <span className="mini-avatar" style={{ background: avatarColor('self') }}>
           V

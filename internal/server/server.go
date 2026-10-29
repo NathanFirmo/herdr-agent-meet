@@ -24,6 +24,7 @@ func New(room *meet.Room, staticDir, uploadDir string) http.Handler {
 	mux.HandleFunc("PUT /api/participants/{id}/name", rename(room))
 	mux.HandleFunc("POST /api/participants/{id}/answer", answer(room))
 	mux.HandleFunc("DELETE /api/participants/{id}", remove(room))
+	mux.HandleFunc("POST /api/agents", launch(room))
 	mux.Handle("GET /", spa(staticDir))
 	return mux
 }
@@ -182,6 +183,32 @@ func remove(room *meet.Room) http.HandlerFunc {
 		default:
 			http.Error(w, err.Error(), http.StatusBadGateway)
 		}
+	}
+}
+
+func launch(room *meet.Room) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var input struct {
+			Name    string `json:"name"`
+			Command string `json:"command"`
+			Dir     string `json:"dir"`
+			Prompt  string `json:"prompt"`
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10)).Decode(&input); err != nil {
+			http.Error(w, "invalid agent", http.StatusBadRequest)
+			return
+		}
+		id, err := room.Launch(r.Context(), meet.LaunchRequest{Name: input.Name, Command: input.Command, Dir: input.Dir, Prompt: input.Prompt})
+		switch {
+		case errors.Is(err, meet.ErrNameRequired):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		case err != nil:
+			http.Error(w, err.Error(), http.StatusBadGateway)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"id": id})
 	}
 }
 

@@ -28,6 +28,7 @@ export interface Participant {
   activity?: Activity
   originalName?: string
   prompt?: Prompt
+  dir?: string
 }
 
 export interface Speech {
