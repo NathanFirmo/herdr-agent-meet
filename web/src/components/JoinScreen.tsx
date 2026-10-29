@@ -1,4 +1,5 @@
 import { avatarColor, initials } from '../avatar'
+import { AudioTest } from './AudioTest'
 import type { Participant } from '../types'
 
 interface JoinScreenProps {
@@ -35,6 +36,7 @@ export function JoinScreen({ participants, connected, left, onJoin }: JoinScreen
         <button className="join-button" onClick={onJoin}>
           {left ? 'Participar novamente' : 'Participar agora'}
         </button>
+        <AudioTest />
       </div>
     </main>
   )

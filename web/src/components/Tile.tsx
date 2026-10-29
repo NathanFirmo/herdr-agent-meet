@@ -1,7 +1,7 @@
-import { Hand, Loader2, MicOff } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { Hand, Loader2, Mic, MicOff } from 'lucide-react'
 import { avatarColor, initials } from '../avatar'
 import type { Participant } from '../types'
+import { ActivityBadge } from './ActivityBadge'
 
 interface AgentTileProps {
   participant: Participant
@@ -12,6 +12,11 @@ export function AgentTile({ participant, speaking }: AgentTileProps) {
   return (
     <div className={`tile ${speaking ? 'speaking' : ''}`}>
       <Avatar id={participant.id} name={participant.name} speaking={speaking} />
+      {participant.activity && (
+        <div className="tile-activity">
+          <ActivityBadge activity={participant.activity} />
+        </div>
+      )}
       <div className="tile-badges">
         {participant.status === 'blocked' && (
           <span className="badge hand" title="Precisa de aprovação">
@@ -43,23 +48,24 @@ export function AgentTile({ participant, speaking }: AgentTileProps) {
 }
 
 interface SelfTileProps {
-  stream: MediaStream | null
+  listening: boolean
+  speaking: boolean
 }
 
-export function SelfTile({ stream }: SelfTileProps) {
-  const video = useRef<HTMLVideoElement>(null)
-
-  useEffect(() => {
-    if (video.current) video.current.srcObject = stream
-  }, [stream])
-
+export function SelfTile({ listening, speaking }: SelfTileProps) {
   return (
-    <div className="tile self">
-      {stream ? <video ref={video} autoPlay muted playsInline /> : <Avatar id="self" name="Você" speaking={false} />}
+    <div className={`tile self ${speaking ? 'speaking' : ''}`}>
+      <Avatar id="self" name="Você" speaking={speaking} />
       <div className="tile-badges">
-        <span className="badge">
-          <MicOff size={16} />
-        </span>
+        {speaking ? (
+          <span className="badge talking" aria-label="Falando">
+            <i />
+            <i />
+            <i />
+          </span>
+        ) : (
+          <span className="badge">{listening ? <Mic size={16} /> : <MicOff size={16} />}</span>
+        )}
       </div>
       <div className="tile-name">
         <span>Você</span>

@@ -1,15 +1,16 @@
-import { Captions, Info, MessageSquareText, PhoneOff, Users, Video, VideoOff, Volume2, VolumeX } from 'lucide-react'
+import { Captions, Info, MessageSquareText, Mic, MicOff, PhoneOff, Users, Volume2, VolumeX } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 export type Panel = 'people' | 'chat' | 'info' | null
 
 interface ControlBarProps {
+  micSupported: boolean
+  micOn: boolean
+  onToggleMic: () => void
   muted: boolean
   onToggleMuted: () => void
   captions: boolean
   onToggleCaptions: () => void
-  camera: boolean
-  onToggleCamera: () => void
   onLeave: () => void
   panel: Panel
   onPanel: (panel: Panel) => void
@@ -29,11 +30,16 @@ export function ControlBar(props: ControlBarProps) {
       </div>
 
       <div className="controls">
+        <RoundButton
+          active={props.micOn}
+          onClick={props.onToggleMic}
+          disabled={!props.micSupported}
+          label={!props.micSupported ? 'Ditado por voz só funciona no Chrome' : props.micOn ? 'Desativar microfone' : 'Ditar mensagem por voz'}
+        >
+          {props.micOn ? <Mic size={20} /> : <MicOff size={20} />}
+        </RoundButton>
         <RoundButton active={!props.muted} onClick={props.onToggleMuted} label={props.muted ? 'Ouvir agentes' : 'Silenciar agentes'}>
           {props.muted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-        </RoundButton>
-        <RoundButton active={props.camera} onClick={props.onToggleCamera} label={props.camera ? 'Desligar câmera' : 'Ligar câmera'}>
-          {props.camera ? <Video size={20} /> : <VideoOff size={20} />}
         </RoundButton>
         <RoundButton active={!props.captions} highlighted={props.captions} onClick={props.onToggleCaptions} label="Legendas">
           <Captions size={20} />
@@ -51,7 +57,7 @@ export function ControlBar(props: ControlBarProps) {
           <Users size={22} />
           <span className="count">{props.participantCount}</span>
         </IconButton>
-        <IconButton active={props.panel === 'chat'} onClick={() => togglePanel('chat')} label="Transcrição">
+        <IconButton active={props.panel === 'chat'} onClick={() => togglePanel('chat')} label="Chat">
           <MessageSquareText size={22} />
         </IconButton>
       </div>
@@ -59,10 +65,17 @@ export function ControlBar(props: ControlBarProps) {
   )
 }
 
-function RoundButton(props: { active: boolean; highlighted?: boolean; onClick: () => void; label: string; children: React.ReactNode }) {
+function RoundButton(props: {
+  active: boolean
+  highlighted?: boolean
+  disabled?: boolean
+  onClick: () => void
+  label: string
+  children: React.ReactNode
+}) {
   const className = props.highlighted ? 'round highlighted' : props.active ? 'round' : 'round off'
   return (
-    <button className={className} onClick={props.onClick} title={props.label} aria-label={props.label}>
+    <button className={className} onClick={props.onClick} disabled={props.disabled} title={props.label} aria-label={props.label}>
       {props.children}
     </button>
   )

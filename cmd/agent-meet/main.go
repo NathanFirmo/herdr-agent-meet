@@ -16,7 +16,9 @@ import (
 
 	"github.com/NathanFirmo/herdr-agent-meet/internal/adapters/herdr"
 	"github.com/NathanFirmo/herdr-agent-meet/internal/adapters/parser"
+	"github.com/NathanFirmo/herdr-agent-meet/internal/adapters/store"
 	"github.com/NathanFirmo/herdr-agent-meet/internal/adapters/summarizer"
+	"github.com/NathanFirmo/herdr-agent-meet/internal/adapters/transcript"
 	"github.com/NathanFirmo/herdr-agent-meet/internal/adapters/tts"
 	"github.com/NathanFirmo/herdr-agent-meet/internal/meet"
 	"github.com/NathanFirmo/herdr-agent-meet/internal/server"
@@ -34,6 +36,7 @@ func run() error {
 	socketPath := env("HERDR_SOCKET_PATH", filepath.Join(home, ".config", "herdr", "herdr.sock"))
 	listenAddr := env("LISTEN_ADDR", ":8080")
 	staticDir := env("STATIC_DIR", "web/dist")
+	uploadDir := env("UPLOAD_DIR", filepath.Join(os.TempDir(), "agent-meet"))
 	interval, err := time.ParseDuration(env("POLL_INTERVAL", "3s"))
 	if err != nil {
 		return fmt.Errorf("POLL_INTERVAL: %w", err)
@@ -48,11 +51,17 @@ func run() error {
 		return err
 	}
 
+	source := herdr.NewSource(socketPath)
 	room := meet.NewRoom(meet.Config{
-		Source:     herdr.NewSource(socketPath),
+		Source:     source,
+		Messenger:  source,
+		Controller: source,
+		Closer:     source,
+		Messages:   newMessageSource(home),
 		Parsers:    map[string]meet.ScreenParser{"claude": parser.ClaudeCode{}},
 		Summarizer: summary,
 		Speaker:    speaker,
+		Names:      store.NewJSONNames(filepath.Join(uploadDir, "names.json")),
 		Voices:     strings.Split(env("VOICES", "pm_alex,pf_dora,pm_santa"), ","),
 	})
 
@@ -60,7 +69,7 @@ func run() error {
 	defer stop()
 	go room.Run(ctx, interval)
 
-	srv := &http.Server{Addr: listenAddr, Handler: server.New(room, staticDir)}
+	srv := &http.Server{Addr: listenAddr, Handler: server.New(room, staticDir, uploadDir)}
 	go func() {
 		<-ctx.Done()
 		shutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -71,6 +80,8 @@ func run() error {
 	slog.Info("agent meet listening",
 		"addr", listenAddr,
 		"herdr_socket", socketPath,
+		"upload_dir", uploadDir,
+		"transcripts", env("CLAUDE_TRANSCRIPT_DIRS", filepath.Join(home, ".claude*")),
 		"summarizer", fmt.Sprintf("%T", summary),
 		"speaker", fmt.Sprintf("%T", speaker),
 	)
@@ -78,6 +89,16 @@ func run() error {
 		return err
 	}
 	return nil
+}
+
+// newMessageSource follows Claude Code transcripts in the config directories
+// listed in CLAUDE_TRANSCRIPT_DIRS (colon-separated globs); "none" turns it off.
+func newMessageSource(home string) meet.MessageSource {
+	dirs := env("CLAUDE_TRANSCRIPT_DIRS", filepath.Join(home, ".claude*"))
+	if dirs == "none" {
+		return nil
+	}
+	return transcript.NewClaude(strings.Split(dirs, ":"))
 }
 
 func newSummarizer() (meet.Summarizer, error) {

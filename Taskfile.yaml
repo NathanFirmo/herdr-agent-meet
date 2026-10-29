@@ -12,6 +12,8 @@ tasks:
   up:
     desc: Build and start the app and Kokoro in Docker
     cmds:
+      # Created as the host user; a directory created by Docker would be owned by root.
+      - mkdir -p "${UPLOAD_DIR:-/tmp/agent-meet}"
       - docker compose up --build -d
       - echo "Agent Meet em http://localhost:${PORT:-8080}"
 

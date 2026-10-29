@@ -29,6 +29,9 @@ type agent struct {
 	Status        string `json:"agent_status"`
 	Name          string `json:"name"`
 	TerminalTitle string `json:"terminal_title_stripped"`
+	Session       struct {
+		Value string `json:"value"`
+	} `json:"agent_session"`
 }
 
 func (a agent) displayName() string {
@@ -51,7 +54,7 @@ func (s *Source) ListAgents(ctx context.Context) ([]meet.Agent, error) {
 	}
 	agents := make([]meet.Agent, 0, len(result.Agents))
 	for _, a := range result.Agents {
-		agents = append(agents, meet.Agent{ID: a.PaneID, Name: a.displayName(), Kind: a.Kind, Status: a.Status})
+		agents = append(agents, meet.Agent{ID: a.PaneID, Name: a.displayName(), Kind: a.Kind, Status: a.Status, SessionID: a.Session.Value})
 	}
 	return agents, nil
 }
@@ -67,6 +70,31 @@ func (s *Source) ReadScreen(ctx context.Context, agentID string) (string, error)
 		return "", err
 	}
 	return result.Read.Text, nil
+}
+
+func (s *Source) SendMessage(ctx context.Context, agentID, text string) error {
+	params := map[string]string{"target": agentID, "text": text}
+	var result json.RawMessage
+	return s.call(ctx, "agent.prompt", params, &result)
+}
+
+func (s *Source) SendKeys(ctx context.Context, agentID string, keys ...string) error {
+	params := map[string]any{"target": agentID, "keys": keys}
+	var result json.RawMessage
+	return s.call(ctx, "agent.send_keys", params, &result)
+}
+
+// SendText types text into the agent's pane; agent IDs are pane IDs.
+func (s *Source) SendText(ctx context.Context, agentID, text string) error {
+	params := map[string]string{"pane_id": agentID, "text": text}
+	var result json.RawMessage
+	return s.call(ctx, "pane.send_text", params, &result)
+}
+
+// CloseAgent closes the agent's pane, which ends the agent running in it.
+func (s *Source) CloseAgent(ctx context.Context, agentID string) error {
+	var result json.RawMessage
+	return s.call(ctx, "pane.close", map[string]string{"pane_id": agentID}, &result)
 }
 
 type request struct {

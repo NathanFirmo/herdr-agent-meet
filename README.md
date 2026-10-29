@@ -8,8 +8,7 @@ like a teammate giving you a status update.
 - Each agent gets a tile and a voice; a blue border shows who is talking.
 - A spinner marks agents at work. A raised hand and a toast mark an agent
   waiting for your approval.
-- Captions, a transcript panel, a participant list, and an optional camera for
-  your own tile.
+- Captions, a chat panel and a participant list.
 
 ## How it works
 
@@ -94,6 +93,7 @@ Set these in `.env`. Empty values use the defaults.
 | `SUMMARIZER` | `command` when `SUMMARY_COMMAND` is set, else `none` | `command` or `none` (speaks the raw text) |
 | `SUMMARY_COMMAND` | | Shell command that reads the prompt on stdin and prints the summary |
 | `POLL_INTERVAL` | `3s` | How often Herdr is read |
+| `UPLOAD_DIR` | `/tmp/agent-meet` | Where chat images are saved; mounted at the same path in Docker |
 
 ### Summary command
 

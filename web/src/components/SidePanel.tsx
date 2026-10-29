@@ -1,20 +1,29 @@
-import { Hand, Loader2, MicOff, X } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { Hand, Loader2, Pencil, Trash2, X } from 'lucide-react'
+import { useState } from 'react'
 import { avatarColor, initials } from '../avatar'
-import type { Participant, Speech } from '../types'
+import type { ChatMessage, Participant, Speech } from '../types'
+import { ActivityBadge } from './ActivityBadge'
+import { AudioTest } from './AudioTest'
+import { Chat } from './Chat'
 import type { Panel } from './ControlBar'
 
 interface SidePanelProps {
   panel: Exclude<Panel, null>
   participants: Participant[]
   speeches: Speech[]
+  messages: ChatMessage[]
   connected: boolean
+  onSend: (text: string, mentions: string[], images: File[]) => Promise<void>
+  onRename: (id: string, name: string) => Promise<void>
+  onRemove: (id: string) => Promise<void>
+  draft: string
+  onDraftChange: (draft: string) => void
   onClose: () => void
 }
 
-const TITLES = { people: 'Participantes', chat: 'Transcrição da chamada', info: 'Detalhes da reunião' }
+const TITLES = { people: 'Participantes', chat: 'Mensagens na chamada', info: 'Detalhes da reunião' }
 
-export function SidePanel({ panel, participants, speeches, connected, onClose }: SidePanelProps) {
+export function SidePanel({ panel, participants, speeches, messages, connected, onSend, onRename, onRemove, draft, onDraftChange, onClose }: SidePanelProps) {
   return (
     <aside className="side-panel">
       <header>
@@ -23,21 +32,29 @@ export function SidePanel({ panel, participants, speeches, connected, onClose }:
           <X size={20} />
         </button>
       </header>
-      {panel === 'people' && <People participants={participants} />}
-      {panel === 'chat' && <Transcript speeches={speeches} />}
+      {panel === 'people' && <People participants={participants} onRename={onRename} onRemove={onRemove} />}
+      {panel === 'chat' && <Chat participants={participants} speeches={speeches} messages={messages} onSend={onSend} draft={draft} onDraftChange={onDraftChange} />}
       {panel === 'info' && (
         <div className="panel-body info">
           <p>Seus agentes do Herdr entram na chamada automaticamente e reportam o que estão fazendo.</p>
+          <p>No chat, marque um agente com @ para mandar uma mensagem direto para a sessão dele.</p>
           <p>
             Conexão com o servidor: <strong>{connected ? 'ativa' : 'reconectando…'}</strong>
           </p>
+          <AudioTest variant="light" />
         </div>
       )}
     </aside>
   )
 }
 
-function People({ participants }: { participants: Participant[] }) {
+interface PeopleProps {
+  participants: Participant[]
+  onRename: (id: string, name: string) => Promise<void>
+  onRemove: (id: string) => Promise<void>
+}
+
+function People({ participants, onRename, onRemove }: PeopleProps) {
   return (
     <ul className="panel-body people">
       <li>
@@ -50,48 +67,112 @@ function People({ participants }: { participants: Participant[] }) {
         </div>
       </li>
       {participants.map((participant) => (
-        <li key={participant.id}>
-          <span className="mini-avatar" style={{ background: avatarColor(participant.id) }}>
-            {initials(participant.name)}
-          </span>
-          <div>
-            <strong>{participant.name}</strong>
-            <small>
-              {participant.kind} · {participant.id}
-            </small>
-          </div>
-          {participant.status === 'blocked' ? (
-            <Hand size={18} className="hand-icon" />
-          ) : participant.status === 'working' ? (
-            <Loader2 size={18} className="spin" />
-          ) : (
-            <MicOff size={18} />
-          )}
-        </li>
+        <PersonRow key={participant.id} participant={participant} onRename={onRename} onRemove={onRemove} />
       ))}
     </ul>
   )
 }
 
-function Transcript({ speeches }: { speeches: Speech[] }) {
-  const end = useRef<HTMLDivElement>(null)
-  useEffect(() => end.current?.scrollIntoView({ behavior: 'smooth' }), [speeches.length])
+function EditableName({ participant, onRename }: { participant: Participant; onRename: (id: string, name: string) => Promise<void> }) {
+  const [editing, setEditing] = useState(false)
+  const [value, setValue] = useState(participant.name)
 
-  if (speeches.length === 0) {
-    return <div className="panel-body empty">Ninguém falou ainda.</div>
+  const startEditing = () => {
+    setValue(participant.name)
+    setEditing(true)
   }
+
+  const save = async () => {
+    setEditing(false)
+    if (value.trim() !== participant.name) await onRename(participant.id, value).catch(() => undefined)
+  }
+
+  if (editing) {
+    return (
+      <input
+        className="rename"
+        autoFocus
+        value={value}
+        maxLength={40}
+        placeholder={participant.originalName ?? participant.name}
+        onChange={(event) => setValue(event.target.value)}
+        onBlur={save}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') event.currentTarget.blur()
+          if (event.key === 'Escape') setEditing(false)
+        }}
+      />
+    )
+  }
+
   return (
-    <div className="panel-body transcript">
-      {speeches.map((speech) => (
-        <div key={speech.id} className="message">
-          <div className="message-head">
-            <strong>{speech.name}</strong>
-            <small>{new Date(speech.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</small>
-          </div>
-          <p>{speech.text}</p>
-        </div>
-      ))}
-      <div ref={end} />
-    </div>
+    <button
+      className="name-button"
+      onClick={startEditing}
+      title={participant.originalName ? `Renomear (original: ${participant.originalName})` : 'Renomear'}
+    >
+      <strong>{participant.name}</strong>
+      <Pencil size={13} className="pencil" />
+    </button>
+  )
+}
+
+interface PersonRowProps {
+  participant: Participant
+  onRename: (id: string, name: string) => Promise<void>
+  onRemove: (id: string) => Promise<void>
+}
+
+function PersonRow({ participant, onRename, onRemove }: PersonRowProps) {
+  const [confirming, setConfirming] = useState(false)
+  const [removing, setRemoving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const remove = async () => {
+    setRemoving(true)
+    setError(null)
+    try {
+      await onRemove(participant.id)
+    } catch {
+      setError('Não foi possível fechar o pane.')
+      setRemoving(false)
+    }
+  }
+
+  return (
+    <li className={confirming ? 'confirming' : ''}>
+      <span className="mini-avatar" style={{ background: avatarColor(participant.id) }}>
+        {initials(participant.name)}
+      </span>
+      <div>
+        <EditableName participant={participant} onRename={onRename} />
+        {confirming ? (
+          <small className="remove-warning">{error ?? 'Encerrar agente? O pane será fechado no Herdr.'}</small>
+        ) : participant.activity ? (
+          <ActivityBadge activity={participant.activity} compact />
+        ) : (
+          <small>
+            {participant.kind} · {participant.id}
+          </small>
+        )}
+        {confirming && (
+          <span className="remove-actions">
+            <button className="text-button" onClick={() => setConfirming(false)} disabled={removing}>
+              Cancelar
+            </button>
+            <button className="danger-button" onClick={remove} disabled={removing}>
+              {removing ? 'Encerrando…' : 'Encerrar'}
+            </button>
+          </span>
+        )}
+      </div>
+      {participant.status === 'blocked' && <Hand size={18} className="hand-icon" />}
+      {participant.status === 'working' && <Loader2 size={18} className="spin" />}
+      {!confirming && (
+        <button className="icon remove" onClick={() => setConfirming(true)} aria-label={`Encerrar ${participant.name}`} title="Encerrar agente">
+          <Trash2 size={18} />
+        </button>
+      )}
+    </li>
   )
 }

@@ -21,10 +21,16 @@ services:
       POLL_INTERVAL: ${POLL_INTERVAL:-3s}
       SUMMARIZER: ${SUMMARIZER:-}
       SUMMARY_COMMAND: ${SUMMARY_COMMAND:-}
+      UPLOAD_DIR: ${UPLOAD_DIR:-/tmp/agent-meet}
+      CLAUDE_TRANSCRIPT_DIRS: ${CLAUDE_TRANSCRIPT_DIRS:-${HOME}/.claude*}
     volumes:
       # The whole directory is mounted so a restarted Herdr server's new socket is still reachable.
       - ${HERDR_DIR:-~/.config/herdr}:/run/herdr
       # Optional host CLI for SUMMARY_COMMAND; /dev/null keeps the mount harmless when unset.
       - ${CLAUDE_BIN:-/dev/null}:/usr/local/bin/claude:ro
       - ${CLAUDE_CONFIG_DIR:-/dev/null}:/claude-config
+      # Same path inside and outside, so agents on the host can open chat images.
+      - ${UPLOAD_DIR:-/tmp/agent-meet}:${UPLOAD_DIR:-/tmp/agent-meet}
+      # Read-only home at the same path, to follow Claude Code transcripts in CLAUDE_TRANSCRIPT_DIRS.
+      - ${HOME}:${HOME}:ro
     restart: unless-stopped
