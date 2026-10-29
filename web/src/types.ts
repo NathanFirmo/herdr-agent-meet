@@ -29,6 +29,7 @@ export interface Participant {
   originalName?: string
   prompt?: Prompt
   dir?: string
+  model?: string
 }
 
 export interface Speech {

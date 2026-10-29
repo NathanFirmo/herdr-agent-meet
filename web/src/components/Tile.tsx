@@ -1,5 +1,6 @@
 import { Hand, Loader2, Mic, MicOff } from 'lucide-react'
 import { avatarColor, initials } from '../avatar'
+import { agentLabel } from '../model'
 import type { Participant } from '../types'
 import { ActivityBadge } from './ActivityBadge'
 
@@ -41,7 +42,7 @@ export function AgentTile({ participant, speaking }: AgentTileProps) {
       </div>
       <div className="tile-name">
         <span>{participant.name}</span>
-        <small>{participant.kind}</small>
+        <small>{agentLabel(participant)}</small>
       </div>
     </div>
   )

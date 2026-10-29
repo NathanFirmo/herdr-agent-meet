@@ -22,6 +22,8 @@ services:
       SUMMARIZER: ${SUMMARIZER:-}
       SUMMARY_COMMAND: ${SUMMARY_COMMAND:-}
       UPLOAD_DIR: ${UPLOAD_DIR:-/tmp/agent-meet}
+      # The host home, for "~" in folder completion; the container's own HOME differs.
+      HOST_HOME: ${HOME}
       CLAUDE_TRANSCRIPT_DIRS: ${CLAUDE_TRANSCRIPT_DIRS:-${HOME}/.claude*}
     volumes:
       # The whole directory is mounted so a restarted Herdr server's new socket is still reachable.

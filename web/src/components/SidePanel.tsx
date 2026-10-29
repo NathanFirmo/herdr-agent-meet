@@ -1,6 +1,7 @@
 import { Hand, Loader2, Pencil, Trash2, UserPlus, X } from 'lucide-react'
 import { useState } from 'react'
 import { avatarColor, initials } from '../avatar'
+import { agentLabel } from '../model'
 import type { ChatMessage, Participant, Speech } from '../types'
 import { ActivityBadge } from './ActivityBadge'
 import { AudioTest } from './AudioTest'
@@ -164,7 +165,7 @@ function PersonRow({ participant, onRename, onRemove }: PersonRowProps) {
           <ActivityBadge activity={participant.activity} compact />
         ) : (
           <small>
-            {participant.kind} · {participant.id}
+            {agentLabel(participant)} · {participant.id}
           </small>
         )}
         {confirming && (

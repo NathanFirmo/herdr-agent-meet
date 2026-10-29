@@ -28,6 +28,7 @@ type Participant struct {
 	Activity *Activity `json:"activity,omitempty"`
 	Prompt   *Prompt   `json:"prompt,omitempty"`
 	Dir      string    `json:"dir,omitempty"`
+	Model    string    `json:"model,omitempty"`
 	// OriginalName is the name from the agent source, set when the user renamed the participant.
 	OriginalName string `json:"originalName,omitempty"`
 }
@@ -174,14 +175,26 @@ func (r *Room) readMessages(agent Agent) (followed bool) {
 	if r.cfg.Messages == nil {
 		return false
 	}
-	messages, ok, err := r.cfg.Messages.NewMessages(agent)
+	update, ok, err := r.cfg.Messages.NewMessages(agent)
 	if err != nil {
 		slog.Warn("read messages", "agent", agent.ID, "err", err)
 	}
-	if ok && len(messages) > 0 {
-		r.enqueueSpeech(agent.ID, speakJob{paragraphs: messages})
+	if update.Model != "" {
+		r.setModel(agent.ID, update.Model)
+	}
+	if ok && len(update.Messages) > 0 {
+		r.enqueueSpeech(agent.ID, speakJob{paragraphs: update.Messages})
 	}
 	return ok
+}
+
+func (r *Room) setModel(id, model string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if p, ok := r.participants[id]; ok && p.Model != model {
+		p.Model = model
+		r.broadcastLocked(Event{Type: "participants", Participants: r.participantsLocked()})
+	}
 }
 
 func (r *Room) upsertParticipant(agent Agent) (becameBlocked bool) {

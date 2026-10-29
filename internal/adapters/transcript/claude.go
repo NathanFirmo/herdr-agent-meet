@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/NathanFirmo/herdr-agent-meet/internal/meet"
@@ -30,6 +31,7 @@ type session struct {
 	offset int64
 	// lastTool skips a tool the agent runs again with the same description.
 	lastTool string
+	model    string
 }
 
 // NewClaude takes config directories as glob patterns, e.g. "~/.claude*".
@@ -40,9 +42,9 @@ func NewClaude(configDirs []string) *Claude {
 // NewMessages starts at the end of a transcript that already existed when the
 // agent was first seen, so history is not replayed, and then returns what was
 // appended since the previous call.
-func (c *Claude) NewMessages(agent meet.Agent) ([]string, bool, error) {
+func (c *Claude) NewMessages(agent meet.Agent) (meet.MessageUpdate, bool, error) {
 	if agent.Kind != "claude" {
-		return nil, false, nil
+		return meet.MessageUpdate{}, false, nil
 	}
 
 	c.mu.Lock()
@@ -56,23 +58,24 @@ func (c *Claude) NewMessages(agent meet.Agent) ([]string, bool, error) {
 		}
 		if path == "" {
 			c.waiting[agent.ID] = true
-			return nil, false, nil
+			return meet.MessageUpdate{}, false, nil
 		}
 		s = &session{path: path}
 		c.sessions[agent.SessionID] = s
 		if !c.waiting[agent.ID] {
 			info, err := os.Stat(path)
 			if err != nil {
-				return nil, false, err
+				return meet.MessageUpdate{}, false, err
 			}
 			s.offset = info.Size()
-			return nil, true, nil
+			s.model = lastModel(path, info.Size())
+			return meet.MessageUpdate{Model: s.model}, true, nil
 		}
 		delete(c.waiting, agent.ID)
 	}
 
 	messages, err := s.readNew()
-	return messages, true, err
+	return meet.MessageUpdate{Messages: messages, Model: s.model}, true, err
 }
 
 func (c *Claude) find(sessionID string) string {
@@ -127,6 +130,7 @@ type entry struct {
 	Type        string `json:"type"`
 	IsSidechain bool   `json:"isSidechain"`
 	Message     struct {
+		Model   string          `json:"model"`
 		Content json.RawMessage `json:"content"`
 	} `json:"message"`
 }
@@ -145,6 +149,9 @@ func (s *session) entryMessages(line []byte) []string {
 	var e entry
 	if json.Unmarshal(line, &e) != nil || e.Type != "assistant" || e.IsSidechain {
 		return nil
+	}
+	if realModel(e.Message.Model) {
+		s.model = e.Message.Model
 	}
 	var blocks []block
 	if json.Unmarshal(e.Message.Content, &blocks) != nil {
@@ -170,4 +177,42 @@ func (s *session) entryMessages(line []byte) []string {
 		}
 	}
 	return messages
+}
+
+// tailSize bounds how much of an existing transcript is scanned for the model.
+const tailSize = 512 << 10
+
+// lastModel finds the model of the latest reply in an existing transcript by
+// scanning its tail, so the call shows it before the agent answers again.
+func lastModel(path string, size int64) string {
+	file, err := os.Open(path)
+	if err != nil {
+		return ""
+	}
+	defer file.Close()
+
+	start := max(size-tailSize, 0)
+	if _, err := file.Seek(start, io.SeekStart); err != nil {
+		return ""
+	}
+	reader := bufio.NewReaderSize(file, 1<<20)
+	if start > 0 {
+		reader.ReadBytes('\n')
+	}
+	model := ""
+	for {
+		line, err := reader.ReadBytes('\n')
+		var e entry
+		if json.Unmarshal(line, &e) == nil && e.Type == "assistant" && !e.IsSidechain && realModel(e.Message.Model) {
+			model = e.Message.Model
+		}
+		if err != nil {
+			return model
+		}
+	}
+}
+
+// realModel skips placeholders Claude Code writes for local messages, such as "<synthetic>".
+func realModel(model string) bool {
+	return model != "" && !strings.HasPrefix(model, "<")
 }

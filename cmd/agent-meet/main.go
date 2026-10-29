@@ -70,7 +70,7 @@ func run() error {
 	defer stop()
 	go room.Run(ctx, interval)
 
-	srv := &http.Server{Addr: listenAddr, Handler: server.New(room, staticDir, uploadDir)}
+	srv := &http.Server{Addr: listenAddr, Handler: server.New(room, staticDir, uploadDir, env("HOST_HOME", home))}
 	go func() {
 		<-ctx.Done()
 		shutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)

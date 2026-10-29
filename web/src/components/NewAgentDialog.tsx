@@ -1,5 +1,6 @@
 import { Loader2, X } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
+import { DirInput } from './DirInput'
 
 const DEFAULT_COMMAND = 'claude'
 const LAST_COMMAND_KEY = 'agent-meet:last-command'
@@ -79,12 +80,8 @@ export function NewAgentDialog({ dirs, onLaunch, onClose }: NewAgentDialogProps)
 
         <label>
           Pasta
-          <input value={dir} onChange={(event) => setDir(event.target.value)} list="agent-dirs" placeholder="/caminho/do/projeto" />
-          <datalist id="agent-dirs">
-            {dirs.map((option) => (
-              <option key={option} value={option} />
-            ))}
-          </datalist>
+          <DirInput value={dir} onChange={setDir} known={dirs} />
+          <small className="field-hint">Tab completa a pasta, como no terminal.</small>
         </label>
 
         <label>

@@ -5,7 +5,8 @@ Herdr session joins as a participant. When one writes something
 new, Agent Meet summarizes it, speaks it out loud, and shows it as captions,
 like a teammate giving you a status update.
 
-- Each agent gets a tile and a voice; a blue border shows who is talking.
+- Each agent gets a tile and a voice; a blue border shows who is talking, and
+  Claude Code agents show the model they run on.
 - A spinner marks agents at work. A raised hand and a toast mark an agent
   waiting for your approval.
 - Captions, a chat panel and a participant list.
@@ -98,6 +99,7 @@ Set these in `.env`. Empty values use the defaults.
 | `SUMMARIZER` | `command` when `SUMMARY_COMMAND` is set, else `none` | `command` or `none` (speaks the raw text) |
 | `SUMMARY_COMMAND` | | Shell command that reads the prompt on stdin and prints the summary |
 | `POLL_INTERVAL` | `3s` | How often Herdr is read |
+| `HOST_HOME` | your home | Home used for `~` in folder completion; Compose sets it from `$HOME` |
 | `UPLOAD_DIR` | `/tmp/agent-meet` | Where chat images are saved; mounted at the same path in Docker |
 
 ### Summary command

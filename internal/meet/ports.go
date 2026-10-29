@@ -76,11 +76,18 @@ type AgentMessenger interface {
 	SendMessage(ctx context.Context, agentID, text string) error
 }
 
+// MessageUpdate is what a message source learned about an agent since the
+// previous read: new messages and, when known, the model answering.
+type MessageUpdate struct {
+	Messages []string
+	Model    string
+}
+
 // MessageSource reads what an agent wrote from somewhere better than its
 // screen, such as a session transcript. ok is false when it cannot follow the
 // agent, and the room falls back to parsing the screen.
 type MessageSource interface {
-	NewMessages(agent Agent) (messages []string, ok bool, err error)
+	NewMessages(agent Agent) (update MessageUpdate, ok bool, err error)
 }
 
 // LaunchRequest describes a new agent to start. Name is how it shows in the

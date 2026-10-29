@@ -8,12 +8,13 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/NathanFirmo/herdr-agent-meet/internal/meet"
 )
 
-func New(room *meet.Room, staticDir, uploadDir string) http.Handler {
+func New(room *meet.Room, staticDir, uploadDir, home string) http.Handler {
 	files := uploads{dir: uploadDir}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/events", events(room))
@@ -24,7 +25,8 @@ func New(room *meet.Room, staticDir, uploadDir string) http.Handler {
 	mux.HandleFunc("PUT /api/participants/{id}/name", rename(room))
 	mux.HandleFunc("POST /api/participants/{id}/answer", answer(room))
 	mux.HandleFunc("DELETE /api/participants/{id}", remove(room))
-	mux.HandleFunc("POST /api/agents", launch(room))
+	mux.HandleFunc("POST /api/agents", launch(room, home))
+	mux.HandleFunc("GET /api/dirs", dirs(home))
 	mux.Handle("GET /", spa(staticDir))
 	return mux
 }
@@ -186,7 +188,7 @@ func remove(room *meet.Room) http.HandlerFunc {
 	}
 }
 
-func launch(room *meet.Room) http.HandlerFunc {
+func launch(room *meet.Room, home string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			Name    string `json:"name"`
@@ -198,7 +200,11 @@ func launch(room *meet.Room) http.HandlerFunc {
 			http.Error(w, "invalid agent", http.StatusBadRequest)
 			return
 		}
-		id, err := room.Launch(r.Context(), meet.LaunchRequest{Name: input.Name, Command: input.Command, Dir: input.Dir, Prompt: input.Prompt})
+		dir := strings.TrimRight(strings.TrimSpace(input.Dir), "/")
+		if dir == "~" || strings.HasPrefix(dir, "~/") {
+			dir = home + strings.TrimPrefix(dir, "~")
+		}
+		id, err := room.Launch(r.Context(), meet.LaunchRequest{Name: input.Name, Command: input.Command, Dir: dir, Prompt: input.Prompt})
 		switch {
 		case errors.Is(err, meet.ErrNameRequired):
 			http.Error(w, err.Error(), http.StatusBadRequest)

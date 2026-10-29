@@ -5,11 +5,12 @@ import { PromptCards } from './components/PromptCards'
 import { SidePanel } from './components/SidePanel'
 import { AgentTile, SelfTile } from './components/Tile'
 import { avatarColor, initials } from './avatar'
+import { useAudioUnlock } from './useAudioUnlock'
 import { useMeeting } from './useMeeting'
 import { useSpeechRecognition } from './useSpeechRecognition'
 
 export default function App() {
-  const [joined, setJoined] = useState(false)
+  const [joined, setJoined] = useState(true)
   const [left, setLeft] = useState(false)
   const [captions, setCaptions] = useState(false)
   const [panel, setPanel] = useState<Panel>(null)
@@ -19,7 +20,8 @@ export default function App() {
     setPanel('chat')
   }, [])
   const speech = useSpeechRecognition(onDictated)
-  const meeting = useMeeting(joined, speech.listening)
+  const audioUnlocked = useAudioUnlock()
+  const meeting = useMeeting(joined, speech.listening || !audioUnlocked)
 
   const leave = () => {
     speech.stop()
@@ -87,6 +89,8 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {!audioUnlocked && <div className="unlock-notice">Clique em qualquer lugar para ouvir os agentes</div>}
 
       {speech.listening && meeting.pending > 0 && (
         <div className="held-notice">
