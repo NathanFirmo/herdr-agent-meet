@@ -6,6 +6,7 @@ services:
     restart: unless-stopped
 
   app:
+    image: nathanfirmo/herdr-agent-meet:${AGENT_MEET_VERSION:-latest}
     build: .
     depends_on:
       - kokoro

@@ -17,6 +17,23 @@ tasks:
       - docker compose up --build -d
       - echo "Agent Meet em http://localhost:${PORT:-8080}"
 
+  start:
+    desc: Pull the published image and start the app and Kokoro, without building
+    cmds:
+      - mkdir -p "${UPLOAD_DIR:-/tmp/agent-meet}"
+      - docker compose pull
+      - docker compose up -d --no-build
+      - echo "Agent Meet em http://localhost:${PORT:-8080}"
+
+  publish:
+    desc: Build and push the image to Docker Hub, tagged VERSION and latest
+    requires:
+      vars: [VERSION]
+    cmds:
+      - docker build --platform linux/amd64 -t nathanfirmo/herdr-agent-meet:{{.VERSION}} -t nathanfirmo/herdr-agent-meet:latest .
+      - docker push nathanfirmo/herdr-agent-meet:{{.VERSION}}
+      - docker push nathanfirmo/herdr-agent-meet:latest
+
   down:
     desc: Stop the Docker stack
     cmds:

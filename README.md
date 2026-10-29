@@ -51,14 +51,68 @@ agent kind, add a `ScreenParser` and register it under the kind Herdr reports
 ## Requirements
 
 - A running Herdr session
-- Docker with Compose
-- [Task](https://taskfile.dev)
+- Docker
+- Docker Compose and [Task](https://taskfile.dev), only to run from a clone
 - Go 1.26 and Node 24, only to run on the host
 
-## Run with Docker
+## Run from Docker Hub, without cloning
+
+The image is published as
+[`nathanfirmo/herdr-agent-meet`](https://hub.docker.com/r/nathanfirmo/herdr-agent-meet).
+It needs Kokoro next to it for the voices and runs as your user, so it can
+open the Herdr socket:
+
+```sh
+docker network create agent-meet
+
+docker run -d --name kokoro --network agent-meet --restart unless-stopped \
+  ghcr.io/remsky/kokoro-fastapi-cpu:v0.2.4
+
+mkdir -p /tmp/agent-meet
+docker run -d --name agent-meet --network agent-meet --restart unless-stopped \
+  --user "$(id -u):$(id -g)" \
+  -p 127.0.0.1:8080:8080 \
+  -e KOKORO_URL=http://kokoro:8880 \
+  -e HOST_HOME="$HOME" \
+  -e CLAUDE_TRANSCRIPT_DIRS="$HOME/.claude*" \
+  -e UPLOAD_DIR=/tmp/agent-meet \
+  -v "$HOME/.config/herdr:/run/herdr" \
+  -v /tmp/agent-meet:/tmp/agent-meet \
+  -v "$HOME:$HOME:ro" \
+  nathanfirmo/herdr-agent-meet:latest
+```
+
+Open http://localhost:8080. Kokoro takes a few seconds to load its model on the
+first start; until then, speech shows as captions only.
+
+What the mounts are for:
+
+| Mount | Why |
+|---|---|
+| `~/.config/herdr` → `/run/herdr` | The Herdr socket. The directory is mounted, so a restarted Herdr server stays reachable |
+| `/tmp/agent-meet` | Chat images and participant names, at the same path agents on the host read them from |
+| `$HOME` (read-only, same path) | Claude Code transcripts and folder completion for new agents |
+
+Any variable from [Configuration](#configuration) can be added with `-e`, for
+example `-e SUMMARY_COMMAND=...` or `-e TTS=none` to skip Kokoro. To stop:
+
+```sh
+docker rm -f agent-meet kokoro && docker network rm agent-meet
+```
+
+## Run with Docker Compose
+
+From a clone of this repository, `task start` pulls the published image and
+starts it with Kokoro, without building:
 
 ```sh
 cp .env.example .env
+task start
+```
+
+To build the image from source instead:
+
+```sh
 task up
 ```
 
@@ -90,6 +144,7 @@ Set these in `.env`. Empty values use the defaults.
 | Variable | Default | Description |
 |---|---|---|
 | `PORT` | `8080` | Port published by Docker |
+| `AGENT_MEET_VERSION` | `latest` | Published image tag used by `task start` |
 | `HERDR_DIR` | `~/.config/herdr` | Directory with `herdr.sock`, mounted in Docker |
 | `HERDR_SOCKET_PATH` | `~/.config/herdr/herdr.sock` | Socket path when running on the host |
 | `TTS` | `kokoro` | `kokoro`, or `none` for captions only |
