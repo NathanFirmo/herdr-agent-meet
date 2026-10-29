@@ -1,0 +1,42 @@
+id = "nathanfirmo.agent-meet"
+name = "Agent Meet"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "A video call where your Herdr agents report their progress out loud, with captions, chat and approvals."
+platforms = ["linux", "macos"]
+
+# Brings the call back with the Herdr server, so it is there after a restart.
+[[startup]]
+command = ["sh", "plugin/agent-meet.sh", "start"]
+
+[[actions]]
+id = "open"
+title = "Agent Meet: open the call"
+contexts = ["workspace"]
+command = ["sh", "plugin/agent-meet.sh", "open"]
+
+[[actions]]
+id = "start"
+title = "Agent Meet: start"
+contexts = ["workspace"]
+command = ["sh", "plugin/agent-meet.sh", "start"]
+
+[[actions]]
+id = "stop"
+title = "Agent Meet: stop"
+contexts = ["workspace"]
+command = ["sh", "plugin/agent-meet.sh", "stop"]
+
+[[actions]]
+id = "update"
+title = "Agent Meet: update to the latest image"
+contexts = ["workspace"]
+command = ["sh", "plugin/agent-meet.sh", "update"]
+
+[[panes]]
+id = "logs"
+title = "Agent Meet logs"
+placement = "popup"
+width = "80%"
+height = "70%"
+command = ["sh", "plugin/agent-meet.sh", "logs"]

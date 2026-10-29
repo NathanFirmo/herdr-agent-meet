@@ -53,9 +53,47 @@ agent kind, add a `ScreenParser` and register it under the kind Herdr reports
 ## Requirements
 
 - A running Herdr session
-- Docker
-- Docker Compose and [Task](https://taskfile.dev), only to run from a clone
+- Docker (with Compose, for the Herdr plugin)
+- [Task](https://taskfile.dev), only to run from a clone
 - Go 1.26 and Node 24, only to run on the host
+
+## Install as a Herdr plugin
+
+Agent Meet is also a [Herdr plugin](https://herdr.dev/docs/plugins/). It runs
+the published image with Docker, so installing it needs Docker and nothing
+else:
+
+```sh
+herdr plugin install NathanFirmo/herdr-agent-meet
+herdr plugin action invoke nathanfirmo.agent-meet.open
+```
+
+The call starts with the Herdr server from then on. On the first start the
+plugin creates its settings file from `.env.example`; edit it to configure
+Agent Meet (see [Configuration](#configuration)):
+
+```sh
+$EDITOR "$(herdr plugin config-dir nathanfirmo.agent-meet)/.env"
+```
+
+| Action | What it does |
+|---|---|
+| `nathanfirmo.agent-meet.open` | Starts the call if needed and opens it in the browser |
+| `nathanfirmo.agent-meet.start` | Starts the call |
+| `nathanfirmo.agent-meet.stop` | Stops the call |
+| `nathanfirmo.agent-meet.update` | Pulls the latest image and restarts |
+
+`herdr plugin pane open --plugin nathanfirmo.agent-meet --entrypoint logs`
+shows the logs in a popup. To open the call with a key, add this to your Herdr
+config:
+
+```toml
+[[keys.command]]
+key = "prefix+m"
+type = "plugin_action"
+command = "nathanfirmo.agent-meet.open"
+description = "Open Agent Meet"
+```
 
 ## Run from Docker Hub, without cloning
 
