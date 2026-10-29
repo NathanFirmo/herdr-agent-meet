@@ -1,0 +1,27 @@
+FROM node:24-alpine AS web
+WORKDIR /web
+COPY web/package.json web/package-lock.json ./
+RUN npm ci
+COPY web/ ./
+RUN npm run build
+
+FROM golang:1.26-alpine AS api
+WORKDIR /src
+COPY go.mod ./
+COPY cmd ./cmd
+COPY internal ./internal
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /agent-meet ./cmd/agent-meet
+
+# Debian (glibc) so CLIs mounted from the host, like a summarizer, can run.
+FROM debian:bookworm-slim
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=api /agent-meet /usr/local/bin/agent-meet
+COPY --from=web /web/dist /app/web
+ENV STATIC_DIR=/app/web \
+    LISTEN_ADDR=:8080 \
+    HERDR_SOCKET_PATH=/run/herdr/herdr.sock \
+    HOME=/tmp
+EXPOSE 8080
+ENTRYPOINT ["agent-meet"]

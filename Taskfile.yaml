@@ -1,0 +1,66 @@
+version: '3'
+
+dotenv: ['.env']
+
+env:
+  UID:
+    sh: id -u
+  GID:
+    sh: id -g
+
+tasks:
+  up:
+    desc: Build and start the app and Kokoro in Docker
+    cmds:
+      - docker compose up --build -d
+      - echo "Agent Meet em http://localhost:${PORT:-8080}"
+
+  down:
+    desc: Stop the Docker stack
+    cmds:
+      - docker compose down
+
+  logs:
+    desc: Follow the app logs
+    cmds:
+      - docker compose logs -f app
+
+  kokoro:
+    desc: Start only Kokoro in Docker, for running the app on the host
+    cmds:
+      - docker compose up -d kokoro
+
+  dev:
+    desc: Run Kokoro in Docker and the API and web dev server on the host
+    deps: [kokoro]
+    cmds:
+      - task: dev:run
+
+  dev:run:
+    internal: true
+    deps: [dev:api, dev:web]
+
+  dev:api:
+    desc: Run the Go API on the host
+    cmds:
+      - go run ./cmd/agent-meet
+
+  dev:web:
+    desc: Run the Vite dev server with hot reload
+    dir: web
+    cmds:
+      - npm install
+      - npm run dev
+
+  build:
+    desc: Build the web bundle and the Go binary
+    cmds:
+      - cd web && npm ci && npm run build
+      - go build -o bin/agent-meet ./cmd/agent-meet
+
+  check:
+    desc: Run formatters, vet and lint
+    cmds:
+      - gofmt -l . | (! grep .)
+      - go vet ./...
+      - cd web && npm run lint && npx tsc -b

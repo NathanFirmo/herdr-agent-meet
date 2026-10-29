@@ -1,0 +1,30 @@
+services:
+  kokoro:
+    image: ghcr.io/remsky/kokoro-fastapi-cpu:v0.2.4
+    ports:
+      - "127.0.0.1:8880:8880"
+    restart: unless-stopped
+
+  app:
+    build: .
+    depends_on:
+      - kokoro
+    # Runs as the host user so it can open the Herdr socket.
+    user: "${UID:-1000}:${GID:-1000}"
+    ports:
+      - "127.0.0.1:${PORT:-8080}:8080"
+    environment:
+      TTS: ${TTS:-kokoro}
+      KOKORO_URL: http://kokoro:8880
+      VOICES: ${VOICES:-pm_alex,pf_dora,pm_santa}
+      SPEECH_SPEED: ${SPEECH_SPEED:-1.1}
+      POLL_INTERVAL: ${POLL_INTERVAL:-3s}
+      SUMMARIZER: ${SUMMARIZER:-}
+      SUMMARY_COMMAND: ${SUMMARY_COMMAND:-}
+    volumes:
+      # The whole directory is mounted so a restarted Herdr server's new socket is still reachable.
+      - ${HERDR_DIR:-~/.config/herdr}:/run/herdr
+      # Optional host CLI for SUMMARY_COMMAND; /dev/null keeps the mount harmless when unset.
+      - ${CLAUDE_BIN:-/dev/null}:/usr/local/bin/claude:ro
+      - ${CLAUDE_CONFIG_DIR:-/dev/null}:/claude-config
+    restart: unless-stopped
