@@ -36,11 +36,15 @@ installs the plugin from the repository and runs the image of that version.
   to confirm. Prereleases use a suffix such as `0.3.0-rc.1`; they are not
   tagged `latest` on Docker Hub.
 
+- If the release changes how the image is run (ports, variables, mounts)
+  or what it does, update `DOCKERHUB.md`, the Docker Hub overview, in the
+  release commit; the Docker Hub description workflow publishes it on push.
+
 ## 3. Bump and tag
 
 1. Set `version = "<version>"` in `herdr-plugin.toml`.
-2. Commit it alone: `chore: release v<version>`, with the Co-Authored-By
-   trailer this session uses.
+2. Commit it, with `DOCKERHUB.md` when it changed: `chore: release
+   v<version>`, with the Co-Authored-By trailer this session uses.
 3. Run `task release`. It refuses a dirty tree or an existing tag, then tags
    `v<version>` and pushes `main` with the tag.
 

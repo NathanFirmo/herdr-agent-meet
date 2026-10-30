@@ -239,6 +239,9 @@ versions such as `0.2.0-rc.1` are not tagged `latest`.
 The workflow logs in to Docker Hub as `nathanfirmo` with the repository
 secret `DOCKER_HUB_TOKEN`, an access token with read and write access.
 
+The Docker Hub overview is `DOCKERHUB.md`; the Docker Hub description
+workflow publishes it whenever it changes on `main`.
+
 | Path | Contents |
 |---|---|
 | `cmd/agent-meet` | Entry point and adapter wiring |

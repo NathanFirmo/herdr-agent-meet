@@ -1,0 +1,23 @@
+name: Docker Hub description
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - DOCKERHUB.md
+      - .github/workflows/dockerhub-description.yml
+  workflow_dispatch:
+
+jobs:
+  description:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: peter-evans/dockerhub-description@v4
+        with:
+          username: nathanfirmo
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+          repository: nathanfirmo/herdr-agent-meet
+          short-description: A video-call UI where your Herdr coding agents report their progress out loud.
+          readme-filepath: DOCKERHUB.md
