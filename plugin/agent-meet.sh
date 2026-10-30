@@ -47,8 +47,26 @@ open_url() {
   done
   case "$(uname -s)" in
     Darwin) open "$url" ;;
-    *) xdg-open "$url" >/dev/null 2>&1 & ;;
+    *) open_url_linux "$url" ;;
   esac
+}
+
+# The Herdr server can run outside the graphical session, without DISPLAY or
+# WAYLAND_DISPLAY. The desktop portal only needs the session bus, so it goes
+# first; xdg-open gets the display from the systemd user session otherwise.
+open_url_linux() {
+  if command -v gdbus >/dev/null 2>&1 && gdbus call --session \
+    --dest org.freedesktop.portal.Desktop --object-path /org/freedesktop/portal/desktop \
+    --method org.freedesktop.portal.OpenURI.OpenURI "" "$1" "{}" >/dev/null 2>&1; then
+    return
+  fi
+  for name in DISPLAY WAYLAND_DISPLAY; do
+    value=$(systemctl --user show-environment 2>/dev/null | sed -n "s/^$name=//p")
+    if [ -z "$(printenv "$name")" ] && [ -n "$value" ]; then
+      export "$name=$value"
+    fi
+  done
+  setsid -f xdg-open "$1" >/dev/null 2>&1
 }
 
 case "${1:-}" in
