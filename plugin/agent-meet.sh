@@ -19,7 +19,7 @@ setting() {
 }
 
 PORT=$(setting PORT)
-PORT=${PORT:-8080}
+PORT=${PORT:-8765}
 UPLOAD_DIR=$(setting UPLOAD_DIR)
 UPLOAD_DIR=${UPLOAD_DIR:-/tmp/agent-meet}
 

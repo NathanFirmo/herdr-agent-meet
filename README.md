@@ -111,7 +111,7 @@ docker run -d --name kokoro --network agent-meet --restart unless-stopped \
 mkdir -p /tmp/agent-meet
 docker run -d --name agent-meet --network agent-meet --restart unless-stopped \
   --user "$(id -u):$(id -g)" \
-  -p 127.0.0.1:8080:8080 \
+  -p 127.0.0.1:8765:8765 \
   -e KOKORO_URL=http://kokoro:8880 \
   -e HOST_HOME="$HOME" \
   -e CLAUDE_TRANSCRIPT_DIRS="$HOME/.claude*" \
@@ -122,7 +122,7 @@ docker run -d --name agent-meet --network agent-meet --restart unless-stopped \
   nathanfirmo/herdr-agent-meet:latest
 ```
 
-Open http://localhost:8080. Kokoro takes a few seconds to load its model on the
+Open http://localhost:8765. Kokoro takes a few seconds to load its model on the
 first start; until then, speech shows as captions only.
 
 What the mounts are for:
@@ -156,7 +156,7 @@ To build the image from source instead:
 task up
 ```
 
-Open http://localhost:8080 and click **Participar agora** (**Join now** with `MEET_LANGUAGE=en-US`). Browsers only allow
+Open http://localhost:8765 and click **Participar agora** (**Join now** with `MEET_LANGUAGE=en-US`). Browsers only allow
 audio after an interaction, so the call starts from that screen.
 
 `task up` builds the app image and starts Kokoro-FastAPI next to it. The app
@@ -183,7 +183,7 @@ Set these in `.env`. Empty values use the defaults.
 
 | Variable | Default | Description |
 |---|---|---|
-| `PORT` | `8080` | Port published by Docker |
+| `PORT` | `8765` | Port published by Docker |
 | `AGENT_MEET_VERSION` | `latest` | Published image tag used by `task start` |
 | `HERDR_DIR` | `~/.config/herdr` | Directory with `herdr.sock`, mounted in Docker |
 | `HERDR_SOCKET_PATH` | `~/.config/herdr/herdr.sock` | Socket path when running on the host |

@@ -34,7 +34,7 @@ func main() {
 func run() error {
 	home, _ := os.UserHomeDir()
 	socketPath := env("HERDR_SOCKET_PATH", filepath.Join(home, ".config", "herdr", "herdr.sock"))
-	listenAddr := env("LISTEN_ADDR", ":8080")
+	listenAddr := env("LISTEN_ADDR", ":8765")
 	staticDir := env("STATIC_DIR", "web/dist")
 	uploadDir := env("UPLOAD_DIR", filepath.Join(os.TempDir(), "agent-meet"))
 	locale := meet.NewLocale(env("MEET_LANGUAGE", meet.DefaultLanguage))

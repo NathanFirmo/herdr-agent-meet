@@ -20,8 +20,8 @@ RUN apt-get update \
 COPY --from=api /agent-meet /usr/local/bin/agent-meet
 COPY --from=web /web/dist /app/web
 ENV STATIC_DIR=/app/web \
-    LISTEN_ADDR=:8080 \
+    LISTEN_ADDR=:8765 \
     HERDR_SOCKET_PATH=/run/herdr/herdr.sock \
     HOME=/tmp
-EXPOSE 8080
+EXPOSE 8765
 ENTRYPOINT ["agent-meet"]
