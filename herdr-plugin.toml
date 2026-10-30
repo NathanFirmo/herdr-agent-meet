@@ -1,6 +1,6 @@
 id = "nathanfirmo.agent-meet"
 name = "Agent Meet"
-version = "0.1.0"
+version = "0.2.0"
 min_herdr_version = "0.9.0"
 description = "A video call where your Herdr agents report their progress out loud, with captions, chat and approvals."
 platforms = ["linux", "macos"]
