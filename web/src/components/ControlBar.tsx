@@ -26,7 +26,7 @@ export function ControlBar(props: ControlBarProps) {
       <div className="meeting-info">
         <span>{now}</span>
         <span className="divider">|</span>
-        <span>Daily dos agentes</span>
+        <span>Agent Meet</span>
       </div>
 
       <div className="controls">

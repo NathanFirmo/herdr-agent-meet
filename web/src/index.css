@@ -1295,3 +1295,10 @@ button {
   z-index: 30;
   white-space: nowrap;
 }
+
+.composer-hint {
+  display: block;
+  color: #5f6368;
+  font-size: 12px;
+  margin-bottom: 6px;
+}

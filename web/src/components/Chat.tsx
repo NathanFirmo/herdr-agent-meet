@@ -131,9 +131,13 @@ export function Chat({ participants, speeches, messages, onSend, draft: text, on
     return participants.filter((p) => value.includes(`@${p.name}`)).map((p) => p.id)
   }
 
+  const hasContent = text.trim() !== '' || images.length > 0
+  const mentioned = mentionsIn(text).length > 0
+  const canSend = hasContent && mentioned && !sending
+
   const send = async () => {
     const value = text.trim()
-    if ((!value && images.length === 0) || sending) return
+    if (!canSend) return
     setSending(true)
     setError(null)
     try {
@@ -235,6 +239,7 @@ export function Chat({ participants, speeches, messages, onSend, draft: text, on
           </ul>
         )}
         {error && <small className="composer-error">{error}</small>}
+        {hasContent && !mentioned && <small className="composer-hint">Marque um agente com @ para enviar</small>}
         {images.length > 0 && (
           <div className="pending-images">
             {images.map((image, index) => (
@@ -275,7 +280,7 @@ export function Chat({ participants, speeches, messages, onSend, draft: text, on
             onKeyDown={onKeyDown}
             onPaste={onPaste}
           />
-          <button className="icon send" onClick={send} disabled={(!text.trim() && images.length === 0) || sending} aria-label="Enviar">
+          <button className="icon send" onClick={send} disabled={!canSend} aria-label="Enviar">
             <SendHorizontal size={20} />
           </button>
         </div>

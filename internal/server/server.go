@@ -120,7 +120,7 @@ func chat(room *meet.Room, files uploads) http.HandlerFunc {
 		}
 
 		message, err := room.Post(r.Context(), r.FormValue("text"), r.MultipartForm.Value["mentions"], attachments)
-		if errors.Is(err, meet.ErrEmptyMessage) {
+		if errors.Is(err, meet.ErrEmptyMessage) || errors.Is(err, meet.ErrNoMention) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}

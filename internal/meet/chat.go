@@ -34,7 +34,10 @@ type Attachment struct {
 	URL  string `json:"url"`
 }
 
-var ErrEmptyMessage = errors.New("message is empty")
+var (
+	ErrEmptyMessage = errors.New("message is empty")
+	ErrNoMention    = errors.New("mention at least one agent")
+)
 
 // Post records a message from the user and delivers it to every mentioned
 // agent, without the mentions themselves and followed by the attachment
@@ -54,6 +57,9 @@ func (r *Room) Post(ctx context.Context, text string, mentions []string, attachm
 		}
 	}
 	r.mu.Unlock()
+	if len(names) == 0 {
+		return ChatMessage{}, ErrNoMention
+	}
 
 	body := strings.ReplaceAll(text, MentionAll, "")
 	for _, name := range names {
