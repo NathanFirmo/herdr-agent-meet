@@ -18,6 +18,7 @@ import (
 // read even after they scrolled off the agent's screen.
 type Claude struct {
 	configDirs []string
+	speakTools bool
 
 	mu       sync.Mutex
 	sessions map[string]*session
@@ -35,8 +36,9 @@ type session struct {
 }
 
 // NewClaude takes config directories as glob patterns, e.g. "~/.claude*".
-func NewClaude(configDirs []string) *Claude {
-	return &Claude{configDirs: configDirs, sessions: map[string]*session{}, waiting: map[string]bool{}}
+// With speakTools, the descriptions of the tools agents run are spoken too.
+func NewClaude(configDirs []string, speakTools bool) *Claude {
+	return &Claude{configDirs: configDirs, speakTools: speakTools, sessions: map[string]*session{}, waiting: map[string]bool{}}
 }
 
 // NewMessages starts at the end of a transcript that already existed when the
@@ -74,7 +76,7 @@ func (c *Claude) NewMessages(agent meet.Agent) (meet.MessageUpdate, bool, error)
 		delete(c.waiting, agent.ID)
 	}
 
-	messages, err := s.readNew()
+	messages, err := s.readNew(c.speakTools)
 	return meet.MessageUpdate{Messages: messages, Model: s.model}, true, err
 }
 
@@ -91,7 +93,7 @@ func (c *Claude) find(sessionID string) string {
 	return ""
 }
 
-func (s *session) readNew() ([]string, error) {
+func (s *session) readNew(speakTools bool) ([]string, error) {
 	file, err := os.Open(s.path)
 	if err != nil {
 		return nil, err
@@ -122,7 +124,7 @@ func (s *session) readNew() ([]string, error) {
 			return messages, err
 		}
 		s.offset += int64(len(line))
-		messages = append(messages, s.entryMessages(line)...)
+		messages = append(messages, s.entryMessages(line, speakTools)...)
 	}
 }
 
@@ -143,9 +145,10 @@ type block struct {
 	} `json:"input"`
 }
 
-// entryMessages keeps the agent's replies and the descriptions of the tools
-// it runs; thinking, tool output and user turns are not spoken.
-func (s *session) entryMessages(line []byte) []string {
+// entryMessages keeps the agent's replies and, with speakTools, the
+// descriptions of the tools it runs; thinking, tool output and user turns
+// are not spoken.
+func (s *session) entryMessages(line []byte, speakTools bool) []string {
 	var e entry
 	if json.Unmarshal(line, &e) != nil || e.Type != "assistant" || e.IsSidechain {
 		return nil
@@ -166,6 +169,9 @@ func (s *session) entryMessages(line []byte) []string {
 			text = Speakable(b.Text)
 			s.lastTool = ""
 		case "tool_use":
+			if !speakTools {
+				continue
+			}
 			text = Speakable(b.Input.Description)
 			if text == s.lastTool {
 				continue

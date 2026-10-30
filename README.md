@@ -187,7 +187,7 @@ Set these in `.env`. Empty values use the defaults.
 | `AGENT_MEET_VERSION` | `latest` | Published image tag used by `task start` |
 | `HERDR_DIR` | `~/.config/herdr` | Directory with `herdr.sock`, mounted in Docker |
 | `HERDR_SOCKET_PATH` | `~/.config/herdr/herdr.sock` | Socket path when running on the host |
-| `MEET_LANGUAGE` | `pt-BR` | Language of the call as a BCP 47 tag (`en-US`, `en-GB`, `es-ES`...): UI, voice dictation, summaries and the briefing new agents get. The UI and fixed lines ship in Portuguese and English; other languages fall back to English text while agents and summaries reply in the chosen language |
+| `MEET_LANGUAGE` | `pt-BR` | Language of the call as a BCP 47 tag (`en-US`, `en-GB`, `es-ES`...): UI, voice dictation, summaries and the briefing new agents get. The UI and fixed lines ship in Portuguese and English; other languages fall back to English text while agents and summaries reply in the chosen language. Agents describe their tool calls in English, so those descriptions are only spoken when the language is English |
 | `TTS` | `kokoro` | `kokoro`, or `none` for captions only |
 | `KOKORO_URL` | `http://localhost:8880` | Kokoro-FastAPI URL (set by Compose in Docker) |
 | `VOICES` | voices for `MEET_LANGUAGE` | Kokoro voices, assigned to agents in turn; Kokoro speaks English, Spanish, French, Hindi, Italian, Japanese, Portuguese and Chinese |

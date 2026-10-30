@@ -38,6 +38,9 @@ func run() error {
 	staticDir := env("STATIC_DIR", "web/dist")
 	uploadDir := env("UPLOAD_DIR", filepath.Join(os.TempDir(), "agent-meet"))
 	locale := meet.NewLocale(env("MEET_LANGUAGE", meet.DefaultLanguage))
+	// Agents describe their tool calls in English whatever the call's language,
+	// so those descriptions are only spoken in English calls.
+	speakTools := meet.BaseLanguage(locale.Language) == "en"
 	interval, err := time.ParseDuration(env("POLL_INTERVAL", "3s"))
 	if err != nil {
 		return fmt.Errorf("POLL_INTERVAL: %w", err)
@@ -59,8 +62,8 @@ func run() error {
 		Controller: source,
 		Closer:     source,
 		Launcher:   source,
-		Messages:   newMessageSource(home),
-		Parsers:    map[string]meet.ScreenParser{"claude": parser.ClaudeCode{}},
+		Messages:   newMessageSource(home, speakTools),
+		Parsers:    map[string]meet.ScreenParser{"claude": parser.ClaudeCode{SpeakTools: speakTools}},
 		Summarizer: summary,
 		Speaker:    speaker,
 		Names:      store.NewJSONNames(filepath.Join(uploadDir, "names.json")),
@@ -97,12 +100,12 @@ func run() error {
 
 // newMessageSource follows Claude Code transcripts in the config directories
 // listed in CLAUDE_TRANSCRIPT_DIRS (colon-separated globs); "none" turns it off.
-func newMessageSource(home string) meet.MessageSource {
+func newMessageSource(home string, speakTools bool) meet.MessageSource {
 	dirs := env("CLAUDE_TRANSCRIPT_DIRS", filepath.Join(home, ".claude*"))
 	if dirs == "none" {
 		return nil
 	}
-	return transcript.NewClaude(strings.Split(dirs, ":"))
+	return transcript.NewClaude(strings.Split(dirs, ":"), speakTools)
 }
 
 func newSummarizer(language string) (meet.Summarizer, error) {

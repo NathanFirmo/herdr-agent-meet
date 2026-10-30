@@ -31,10 +31,12 @@ var (
 // starts with "●" and continues on indented rows, across blank lines, until
 // tool output ("⎿"), the next message or the UI below it. Each block between
 // blank lines is its own paragraph, so a long message scrolling off screen is
-// not spoken twice.
-type ClaudeCode struct{}
+// not spoken twice. Tool descriptions are only spoken with SpeakTools.
+type ClaudeCode struct {
+	SpeakTools bool
+}
 
-func (ClaudeCode) Parse(screen string) meet.ParsedScreen {
+func (c ClaudeCode) Parse(screen string) meet.ParsedScreen {
 	var parsed meet.ParsedScreen
 	var runningTool *meet.ScreenActivity
 	var turn time.Duration
@@ -68,6 +70,7 @@ func (ClaudeCode) Parse(screen string) meet.ParsedScreen {
 			blocks[len(blocks)-1] = append(blocks[len(blocks)-1], listBullet.ReplaceAllString(rowTrimmed, ""))
 		}
 		i = next - 1
+		tool := next < len(rows) && strings.HasPrefix(strings.TrimSpace(rows[next]), toolOutputMarker)
 
 		runningTool = nil
 		for index, block := range blocks {
@@ -76,7 +79,11 @@ func (ClaudeCode) Parse(screen string) meet.ParsedScreen {
 				if match := toolTimer.FindStringSubmatch(paragraph); match != nil {
 					paragraph = strings.TrimSuffix(paragraph, match[0])
 					runningTool = &meet.ScreenActivity{Kind: meet.ActivityTool, Label: paragraph, Elapsed: parseDuration(match[1])}
+					tool = true
 				}
+			}
+			if tool && !c.SpeakTools {
+				continue
 			}
 			if len([]rune(paragraph)) > minLength && !slashHint.MatchString(paragraph) {
 				parsed.Paragraphs = append(parsed.Paragraphs, paragraph)
