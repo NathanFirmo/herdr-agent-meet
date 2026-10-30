@@ -91,8 +91,8 @@ type MessageSource interface {
 }
 
 // LaunchRequest describes a new agent to start. Name is how it shows in the
-// call, Command is the shell command that starts it, and Prompt, when set, is
-// its first message.
+// call, Command is the shell command that starts it, and Prompt is what the
+// user wants as its first message.
 type LaunchRequest struct {
 	Name    string
 	Command string

@@ -14,8 +14,6 @@ import (
 
 const (
 	historySize  = 300
-	blockedLine  = "Chefe, preciso da sua aprovação aqui!"
-	testLine     = "Oi, chefe! Este é um teste de áudio. Se você está me ouvindo, está tudo certo."
 	speakTimeout = 90 * time.Second
 )
 
@@ -76,6 +74,7 @@ type Config struct {
 	Speaker    Speaker
 	Names      NameStore
 	Voices     []string
+	Locale     Locale
 }
 
 type Room struct {
@@ -102,6 +101,9 @@ func NewRoom(cfg Config) *Room {
 	if err != nil {
 		slog.Warn("load participant names", "err", err)
 		names = map[string]string{}
+	}
+	if cfg.Locale.Language == "" {
+		cfg.Locale = NewLocale(DefaultLanguage)
 	}
 	return &Room{
 		cfg:           cfg,
@@ -140,7 +142,7 @@ func (r *Room) poll(ctx context.Context) {
 
 	for _, agent := range agents {
 		if r.upsertParticipant(agent) {
-			r.enqueueSpeech(agent.ID, speakJob{text: blockedLine})
+			r.enqueueSpeech(agent.ID, speakJob{text: r.cfg.Locale.BlockedLine})
 		}
 
 		followed := r.readMessages(agent)
@@ -403,7 +405,11 @@ func (r *Room) TestAudio(ctx context.Context) (*Audio, error) {
 	voice := r.cfg.Voices[r.testCursor%len(r.cfg.Voices)]
 	r.testCursor++
 	r.mu.Unlock()
-	return r.cfg.Speaker.Speak(ctx, testLine, voice)
+	return r.cfg.Speaker.Speak(ctx, r.cfg.Locale.TestLine, voice)
+}
+
+func (r *Room) Locale() Locale {
+	return r.cfg.Locale
 }
 
 func (r *Room) Audio(id string) (*Audio, bool) {
