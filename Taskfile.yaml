@@ -25,14 +25,19 @@ tasks:
       - docker compose up -d --no-build
       - echo "Agent Meet em http://localhost:${PORT:-8765}"
 
-  publish:
-    desc: Build and push the image to Docker Hub, tagged VERSION and latest
-    requires:
-      vars: [VERSION]
+  release:
+    desc: Tag the version in herdr-plugin.toml and push it; the Release workflow publishes it
+    vars:
+      VERSION:
+        sh: sed -n 's/^version = "\(.*\)"$/\1/p' herdr-plugin.toml
+    preconditions:
+      - sh: test -z "$(git status --porcelain)"
+        msg: Commit your changes first
+      - sh: '! git rev-parse -q --verify "refs/tags/v{{.VERSION}}"'
+        msg: v{{.VERSION}} is already tagged; bump the version in herdr-plugin.toml
     cmds:
-      - docker build --platform linux/amd64 -t nathanfirmo/herdr-agent-meet:{{.VERSION}} -t nathanfirmo/herdr-agent-meet:latest .
-      - docker push nathanfirmo/herdr-agent-meet:{{.VERSION}}
-      - docker push nathanfirmo/herdr-agent-meet:latest
+      - git tag -a v{{.VERSION}} -m v{{.VERSION}}
+      - git push origin HEAD v{{.VERSION}}
 
   down:
     desc: Stop the Docker stack

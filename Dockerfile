@@ -1,16 +1,19 @@
-FROM node:24-alpine AS web
+# The web bundle and the Go binary are built on the host platform and the
+# binary is cross-compiled, so multi-platform builds only emulate the last stage.
+FROM --platform=$BUILDPLATFORM node:24-alpine AS web
 WORKDIR /web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
 COPY web/ ./
 RUN npm run build
 
-FROM golang:1.26-alpine AS api
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS api
+ARG TARGETOS TARGETARCH
 WORKDIR /src
 COPY go.mod ./
 COPY cmd ./cmd
 COPY internal ./internal
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /agent-meet ./cmd/agent-meet
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /agent-meet ./cmd/agent-meet
 
 # Debian (glibc) so CLIs mounted from the host, like a summarizer, can run.
 FROM debian:bookworm-slim

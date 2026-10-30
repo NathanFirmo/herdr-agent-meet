@@ -228,6 +228,17 @@ task check   # gofmt, go vet, oxlint and tsc
 task build   # web bundle and Go binary in bin/
 ```
 
+### Releasing
+
+Bump `version` in `herdr-plugin.toml`, commit, and run `task release`. It tags
+`v<version>` and pushes it; the Release workflow then checks the code, pushes
+the image for `linux/amd64` and `linux/arm64` to Docker Hub as `<version>`,
+`<major>.<minor>` and `latest`, and creates the GitHub release. Prerelease
+versions such as `0.2.0-rc.1` are not tagged `latest`.
+
+The workflow logs in to Docker Hub as `nathanfirmo` with the repository
+secret `DOCKER_HUB_TOKEN`, an access token with read and write access.
+
 | Path | Contents |
 |---|---|
 | `cmd/agent-meet` | Entry point and adapter wiring |
