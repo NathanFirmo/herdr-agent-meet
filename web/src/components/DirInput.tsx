@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { t } from '../i18n'
 
 const DEBOUNCE_MS = 120
 
@@ -72,7 +73,7 @@ export function DirInput({ value, onChange, known }: DirInputProps) {
         value={value}
         spellCheck={false}
         autoComplete="off"
-        placeholder="~/projetos/meu-app"
+        placeholder={t.folderPlaceholder}
         onChange={(event) => {
           onChange(event.target.value)
           setOpen(true)

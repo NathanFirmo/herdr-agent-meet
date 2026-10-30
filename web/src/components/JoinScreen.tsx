@@ -1,6 +1,7 @@
 import { avatarColor, initials } from '../avatar'
 import { AudioTest } from './AudioTest'
 import type { Participant } from '../types'
+import { t } from '../i18n'
 
 interface JoinScreenProps {
   participants: Participant[]
@@ -14,11 +15,11 @@ export function JoinScreen({ participants, connected, left, onJoin }: JoinScreen
     <main className="join">
       <div className="join-preview">
         <div className="avatar" style={{ background: avatarColor('self') }}>
-          V
+          {initials(t.you)}
         </div>
       </div>
       <div className="join-side">
-        <h1>{left ? 'Você saiu da chamada' : 'Pronto para participar?'}</h1>
+        <h1>{left ? t.leftCall : t.readyToJoin}</h1>
         <div className="join-people">
           {participants.slice(0, 5).map((participant) => (
             <span key={participant.id} className="mini-avatar" style={{ background: avatarColor(participant.id) }}>
@@ -28,13 +29,13 @@ export function JoinScreen({ participants, connected, left, onJoin }: JoinScreen
         </div>
         <p>
           {!connected
-            ? 'Conectando ao Herdr…'
+            ? t.connecting
             : participants.length === 0
-              ? 'Nenhum agente na chamada ainda'
-              : `${participants.length} ${participants.length === 1 ? 'agente está' : 'agentes estão'} na chamada`}
+              ? t.noAgents
+              : t.agentsInCall(participants.length)}
         </p>
         <button className="join-button" onClick={onJoin}>
-          {left ? 'Participar novamente' : 'Participar agora'}
+          {left ? t.rejoin : t.joinNow}
         </button>
         <AudioTest />
       </div>

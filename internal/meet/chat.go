@@ -10,10 +10,7 @@ import (
 
 const (
 	SelfID          = "self"
-	selfName        = "Você"
 	deliveryTimeout = 10 * time.Second
-	// MentionAll is how the UI addresses everyone; it expands to all agents client-side.
-	MentionAll = "@todos"
 )
 
 type ChatMessage struct {
@@ -61,7 +58,8 @@ func (r *Room) Post(ctx context.Context, text string, mentions []string, attachm
 		return ChatMessage{}, ErrNoMention
 	}
 
-	body := strings.ReplaceAll(text, MentionAll, "")
+	// Locale.MentionAll expands to every agent in the UI, so it only needs removing here.
+	body := strings.ReplaceAll(text, "@"+r.cfg.Locale.MentionAll, "")
 	for _, name := range names {
 		body = strings.ReplaceAll(body, "@"+name, "")
 	}
@@ -74,7 +72,7 @@ func (r *Room) Post(ctx context.Context, text string, mentions []string, attachm
 	message := ChatMessage{
 		ID:          newID(),
 		AuthorID:    SelfID,
-		AuthorName:  selfName,
+		AuthorName:  r.cfg.Locale.SelfName,
 		Text:        text,
 		Mentions:    []string{},
 		Attachments: attachments,

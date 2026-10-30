@@ -8,6 +8,7 @@ import { avatarColor, initials } from './avatar'
 import { useAudioUnlock } from './useAudioUnlock'
 import { useMeeting } from './useMeeting'
 import { useSpeechRecognition } from './useSpeechRecognition'
+import { t } from './i18n'
 
 export default function App() {
   const [joined, setJoined] = useState(true)
@@ -69,10 +70,10 @@ export default function App() {
       {captions && speech.interim && (
         <div className="captions">
           <span className="mini-avatar" style={{ background: avatarColor('self') }}>
-            V
+            {initials(t.you)}
           </span>
           <div>
-            <strong>Você</strong>
+            <strong>{t.you}</strong>
             <p>{speech.interim}</p>
           </div>
         </div>
@@ -90,12 +91,10 @@ export default function App() {
         </div>
       )}
 
-      {!audioUnlocked && <div className="unlock-notice">Clique em qualquer lugar para ouvir os agentes</div>}
+      {!audioUnlocked && <div className="unlock-notice">{t.unlockAudio}</div>}
 
       {speech.listening && meeting.pending > 0 && (
-        <div className="held-notice">
-          Microfone ligado: {meeting.pending} {meeting.pending === 1 ? 'fala em espera' : 'falas em espera'}. Desligue para ouvir os agentes.
-        </div>
+<div className="held-notice">{t.heldSpeeches(meeting.pending)}</div>
       )}
 
       <div className="toasts">

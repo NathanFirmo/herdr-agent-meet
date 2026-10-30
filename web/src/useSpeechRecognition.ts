@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { language, t } from './i18n'
 
 interface RecognitionResult {
   isFinal: boolean
@@ -27,16 +28,17 @@ const Recognition: RecognitionConstructor | undefined =
   (window as unknown as { SpeechRecognition?: RecognitionConstructor }).SpeechRecognition ??
   (window as unknown as { webkitSpeechRecognition?: RecognitionConstructor }).webkitSpeechRecognition
 
-const ERRORS: Record<string, string> = {
-  'not-allowed': 'O navegador bloqueou o microfone.',
-  'service-not-allowed': 'O reconhecimento de voz não está disponível neste navegador.',
-  'audio-capture': 'Nenhum microfone encontrado.',
-  network: 'Sem conexão com o serviço de reconhecimento de voz.',
-}
+const errorMessage = (error: string) =>
+  ({
+    'not-allowed': t.micBlocked,
+    'service-not-allowed': t.recognitionUnavailable,
+    'audio-capture': t.noMicrophone,
+    network: t.recognitionOffline,
+  })[error] ?? t.recognitionError(error)
 
 // Chrome's Web Speech API. Recognition stops on its own after silence, so it
 // is restarted while the user keeps the microphone on.
-export function useSpeechRecognition(onFinal: (text: string) => void, lang = 'pt-BR') {
+export function useSpeechRecognition(onFinal: (text: string) => void, lang = language) {
   const [listening, setListening] = useState(false)
   const [interim, setInterim] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -76,7 +78,7 @@ export function useSpeechRecognition(onFinal: (text: string) => void, lang = 'pt
     }
     instance.onerror = (event) => {
       if (event.error === 'no-speech' || event.error === 'aborted') return
-      setError(ERRORS[event.error] ?? `Erro no reconhecimento de voz: ${event.error}`)
+      setError(errorMessage(event.error))
       wanted.current = false
     }
     instance.onend = () => {

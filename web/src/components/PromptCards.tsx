@@ -2,6 +2,7 @@ import { ChevronDown, ChevronUp, Hand } from 'lucide-react'
 import { useState } from 'react'
 import { avatarColor, initials } from '../avatar'
 import type { Participant, Prompt, PromptOption } from '../types'
+import { t } from '../i18n'
 
 type Answer = (id: string, option: number, text?: string) => Promise<void>
 
@@ -39,13 +40,13 @@ function PromptCard({ participant, prompt, onAnswer }: { participant: Participan
     try {
       await onAnswer(participant.id, option, typed)
     } catch (failure) {
-      setError(failure instanceof Error && failure.message ? failure.message : 'Não foi possível responder.')
+      setError(failure instanceof Error && failure.message ? failure.message : t.answerFailed)
       setSending(false)
     }
   }
 
   return (
-    <section className="prompt-card" aria-label={`${participant.name} precisa de você`}>
+    <section className="prompt-card" aria-label={t.needsYouLabel(participant.name)}>
       <header>
         <span className="mini-avatar" style={{ background: avatarColor(participant.id) }}>
           {initials(participant.name)}
@@ -53,10 +54,10 @@ function PromptCard({ participant, prompt, onAnswer }: { participant: Participan
         <div>
           <strong>{participant.name}</strong>
           <small>
-            <Hand size={12} /> precisa de você
+            <Hand size={12} /> {t.needsYou}
           </small>
         </div>
-        <button className="icon" onClick={() => setCollapsed(!collapsed)} aria-label={collapsed ? 'Expandir' : 'Recolher'}>
+        <button className="icon" onClick={() => setCollapsed(!collapsed)} aria-label={collapsed ? t.expand : t.collapse}>
           {collapsed ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
         </button>
       </header>
@@ -75,13 +76,13 @@ function PromptCard({ participant, prompt, onAnswer }: { participant: Participan
                 if (text.trim()) answer(typing.number, text.trim())
               }}
             >
-              <textarea autoFocus rows={3} value={text} onChange={(event) => setText(event.target.value)} placeholder="Sua resposta" />
+              <textarea autoFocus rows={3} value={text} onChange={(event) => setText(event.target.value)} placeholder={t.yourAnswer} />
               <div className="prompt-actions">
                 <button type="button" className="text-button" onClick={() => setTyping(null)} disabled={sending}>
-                  Voltar
+                  {t.back}
                 </button>
                 <button type="submit" className="primary-button" disabled={sending || !text.trim()}>
-                  Enviar
+                  {t.send}
                 </button>
               </div>
             </form>
@@ -104,7 +105,7 @@ function PromptCard({ participant, prompt, onAnswer }: { participant: Participan
           {!typing && (
             <div className="prompt-actions">
               <button className="text-button" onClick={() => answer(0)} disabled={sending}>
-                Cancelar (Esc)
+                {t.cancelEsc}
               </button>
             </div>
           )}

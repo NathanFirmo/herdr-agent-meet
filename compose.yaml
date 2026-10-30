@@ -17,7 +17,8 @@ services:
     environment:
       TTS: ${TTS:-kokoro}
       KOKORO_URL: http://kokoro:8880
-      VOICES: ${VOICES:-pm_alex,pf_dora,pm_santa}
+      MEET_LANGUAGE: ${MEET_LANGUAGE:-}
+      VOICES: ${VOICES:-}
       SPEECH_SPEED: ${SPEECH_SPEED:-1.1}
       POLL_INTERVAL: ${POLL_INTERVAL:-3s}
       SUMMARIZER: ${SUMMARIZER:-}

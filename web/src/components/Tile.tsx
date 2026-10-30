@@ -3,6 +3,7 @@ import { avatarColor, initials } from '../avatar'
 import { agentLabel } from '../model'
 import type { Participant } from '../types'
 import { ActivityBadge } from './ActivityBadge'
+import { t } from '../i18n'
 
 interface AgentTileProps {
   participant: Participant
@@ -20,22 +21,22 @@ export function AgentTile({ participant, speaking }: AgentTileProps) {
       )}
       <div className="tile-badges">
         {participant.status === 'blocked' && (
-          <span className="badge hand" title="Precisa de aprovação">
+          <span className="badge hand" title={t.needsApproval}>
             <Hand size={16} />
           </span>
         )}
         {speaking ? (
-          <span className="badge talking" aria-label="Falando">
+          <span className="badge talking" aria-label={t.talking}>
             <i />
             <i />
             <i />
           </span>
         ) : participant.status === 'working' ? (
-          <span className="badge" title="Trabalhando">
+          <span className="badge" title={t.working}>
             <Loader2 size={16} className="spin" />
           </span>
         ) : (
-          <span className="badge" title="Em silêncio">
+          <span className="badge" title={t.silent}>
             <MicOff size={16} />
           </span>
         )}
@@ -56,10 +57,10 @@ interface SelfTileProps {
 export function SelfTile({ listening, speaking }: SelfTileProps) {
   return (
     <div className={`tile self ${speaking ? 'speaking' : ''}`}>
-      <Avatar id="self" name="Você" speaking={speaking} />
+      <Avatar id="self" name={t.you} speaking={speaking} />
       <div className="tile-badges">
         {speaking ? (
-          <span className="badge talking" aria-label="Falando">
+          <span className="badge talking" aria-label={t.talking}>
             <i />
             <i />
             <i />
@@ -69,7 +70,7 @@ export function SelfTile({ listening, speaking }: SelfTileProps) {
         )}
       </div>
       <div className="tile-name">
-        <span>Você</span>
+        <span>{t.you}</span>
       </div>
     </div>
   )

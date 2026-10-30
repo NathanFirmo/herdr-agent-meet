@@ -17,6 +17,7 @@ import (
 func New(room *meet.Room, staticDir, uploadDir, home string) http.Handler {
 	files := uploads{dir: uploadDir}
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/config", config(room))
 	mux.HandleFunc("GET /api/events", events(room))
 	mux.HandleFunc("GET /api/audio/{id}", audio(room))
 	mux.HandleFunc("GET /api/audio-test", audioTest(room))
@@ -29,6 +30,13 @@ func New(room *meet.Room, staticDir, uploadDir, home string) http.Handler {
 	mux.HandleFunc("GET /api/dirs", dirs(home))
 	mux.Handle("GET /", spa(staticDir))
 	return mux
+}
+
+func config(room *meet.Room) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(room.Locale())
+	}
 }
 
 func events(room *meet.Room) http.HandlerFunc {

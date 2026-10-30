@@ -1,9 +1,9 @@
 import { Paperclip, SendHorizontal, X } from 'lucide-react'
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ClipboardEvent, type DragEvent, type KeyboardEvent } from 'react'
 import { avatarColor, initials } from '../avatar'
+import { formatTime, mentionAll, t } from '../i18n'
 import type { ChatMessage, Participant, Speech } from '../types'
 
-const MENTION_ALL = 'todos'
 const MAX_INPUT_HEIGHT = 120
 const MAX_IMAGES = 5
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024
@@ -59,7 +59,7 @@ export function Chat({ participants, speeches, messages, onSend, draft: text, on
 
   const suggestions = useMemo<Suggestion[]>(() => {
     if (query === null) return []
-    const all = [{ id: MENTION_ALL, name: MENTION_ALL }, ...participants.map(({ id, name }) => ({ id, name }))]
+    const all = [{ id: mentionAll, name: mentionAll }, ...participants.map(({ id, name }) => ({ id, name }))]
     const normalized = query.toLowerCase()
     return all.filter((option) => option.name.toLowerCase().includes(normalized)).slice(0, 6)
   }, [query, participants])
@@ -89,18 +89,18 @@ export function Chat({ participants, speeches, messages, onSend, draft: text, on
     const accepted: { file: File; preview: string }[] = []
     for (const file of files) {
       if (!IMAGE_TYPES.includes(file.type)) {
-        setError('Só dá para anexar PNG, JPEG, GIF ou WebP.')
+        setError(t.imageTypes)
         continue
       }
       if (file.size > MAX_IMAGE_BYTES) {
-        setError(`${file.name} passa de 10 MB.`)
+        setError(t.imageTooBig(file.name))
         continue
       }
       accepted.push({ file, preview: URL.createObjectURL(file) })
     }
     setImages((current) => {
       const next = [...current, ...accepted]
-      if (next.length > MAX_IMAGES) setError(`No máximo ${MAX_IMAGES} imagens por mensagem.`)
+      if (next.length > MAX_IMAGES) setError(t.tooManyImages(MAX_IMAGES))
       next.slice(MAX_IMAGES).forEach((image) => URL.revokeObjectURL(image.preview))
       return next.slice(0, MAX_IMAGES)
     })
@@ -127,7 +127,7 @@ export function Chat({ participants, speeches, messages, onSend, draft: text, on
   }
 
   const mentionsIn = (value: string) => {
-    if (value.includes(`@${MENTION_ALL}`)) return participants.map((p) => p.id)
+    if (value.includes(`@${mentionAll}`)) return participants.map((p) => p.id)
     return participants.filter((p) => value.includes(`@${p.name}`)).map((p) => p.id)
   }
 
@@ -146,7 +146,7 @@ export function Chat({ participants, speeches, messages, onSend, draft: text, on
       setImages([])
       setText('')
     } catch {
-      setError('Não foi possível enviar a mensagem.')
+      setError(t.sendFailed)
     } finally {
       setSending(false)
     }
@@ -179,7 +179,7 @@ export function Chat({ participants, speeches, messages, onSend, draft: text, on
   return (
     <div className="chat">
       <div className="panel-body chat-log">
-        {entries.length === 0 && <p className="empty">Ninguém falou ainda. Marque um agente com @ para falar com ele.</p>}
+        {entries.length === 0 && <p className="empty">{t.chatEmpty}</p>}
         {entries.map((entry) =>
           entry.kind === 'speech' ? (
             <div key={entry.id} className="message">
@@ -190,13 +190,13 @@ export function Chat({ participants, speeches, messages, onSend, draft: text, on
             <div key={entry.id} className="message mine">
               <Head name={entry.message.authorName} at={entry.message.createdAt} />
               <p>
-                <Highlighted text={entry.message.text} names={[MENTION_ALL, ...entry.message.mentions.map((id) => names.get(id) ?? id)]} />
+                <Highlighted text={entry.message.text} names={[mentionAll, ...entry.message.mentions.map((id) => names.get(id) ?? id)]} />
               </p>
               {entry.message.attachments && entry.message.attachments.length > 0 && (
                 <div className="attachments">
                   {entry.message.attachments.map((attachment) => (
                     <a key={attachment.url} href={attachment.url} target="_blank" rel="noreferrer">
-                      <img src={attachment.url} alt="Imagem enviada" />
+                      <img src={attachment.url} alt={t.sentImage} />
                     </a>
                   ))}
                 </div>
@@ -230,22 +230,22 @@ export function Chat({ participants, speeches, messages, onSend, draft: text, on
                   choose(suggestion)
                 }}
               >
-                <span className="mini-avatar" style={{ background: suggestion.id === MENTION_ALL ? '#5f6368' : avatarColor(suggestion.id) }}>
-                  {suggestion.id === MENTION_ALL ? '@' : initials(suggestion.name)}
+                <span className="mini-avatar" style={{ background: suggestion.id === mentionAll ? '#5f6368' : avatarColor(suggestion.id) }}>
+                  {suggestion.id === mentionAll ? '@' : initials(suggestion.name)}
                 </span>
-                {suggestion.id === MENTION_ALL ? 'todos os agentes' : suggestion.name}
+                {suggestion.id === mentionAll ? t.allAgents : suggestion.name}
               </li>
             ))}
           </ul>
         )}
         {error && <small className="composer-error">{error}</small>}
-        {hasContent && !mentioned && <small className="composer-hint">Marque um agente com @ para enviar</small>}
+        {hasContent && !mentioned && <small className="composer-hint">{t.mentionToSend}</small>}
         {images.length > 0 && (
           <div className="pending-images">
             {images.map((image, index) => (
               <div key={image.preview} className="pending-image">
                 <img src={image.preview} alt={image.file.name} />
-                <button onClick={() => removeImage(index)} aria-label={`Remover ${image.file.name}`}>
+                <button onClick={() => removeImage(index)} aria-label={t.removeImage(image.file.name)}>
                   <X size={14} />
                 </button>
               </div>
@@ -264,14 +264,14 @@ export function Chat({ participants, speeches, messages, onSend, draft: text, on
               event.target.value = ''
             }}
           />
-          <button className="icon attach" onClick={() => picker.current?.click()} aria-label="Anexar imagem" title="Anexar imagem">
+          <button className="icon attach" onClick={() => picker.current?.click()} aria-label={t.attachImage} title={t.attachImage}>
             <Paperclip size={18} />
           </button>
           <textarea
             ref={input}
             rows={1}
             value={text}
-            placeholder="Mensagem (@ para marcar)"
+            placeholder={t.messagePlaceholder}
             onChange={(event) => {
               setText(event.target.value)
               updateQuery(event.target.value, event.target.selectionStart)
@@ -280,7 +280,7 @@ export function Chat({ participants, speeches, messages, onSend, draft: text, on
             onKeyDown={onKeyDown}
             onPaste={onPaste}
           />
-          <button className="icon send" onClick={send} disabled={!canSend} aria-label="Enviar">
+          <button className="icon send" onClick={send} disabled={!canSend} aria-label={t.send}>
             <SendHorizontal size={20} />
           </button>
         </div>
@@ -293,7 +293,7 @@ function Head({ name, at, color }: { name: string; at: string; color?: string })
   return (
     <div className="message-head">
       <strong style={color ? { color } : undefined}>{name}</strong>
-      <small>{new Date(at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</small>
+      <small>{formatTime(new Date(at))}</small>
     </div>
   )
 }
@@ -312,18 +312,18 @@ function Highlighted({ text, names }: { text: string; names: string[] }) {
 }
 
 function Delivery({ message, names }: { message: ChatMessage; names: Map<string, string> }) {
-  if (message.mentions.length === 0) return <small className="delivery">Ninguém marcado, ficou só no chat</small>
+  if (message.mentions.length === 0) return <small className="delivery">{t.nobodyMentioned}</small>
   const failed = message.failed ?? {}
   const delivered = message.mentions.filter((id) => !failed[id])
   return (
     <>
       {delivered.length > 0 && (
-        <small className="delivery">Entregue para {delivered.map((id) => names.get(id) ?? id).join(', ')}</small>
+        <small className="delivery">{t.deliveredTo(delivered.map((id) => names.get(id) ?? id).join(', '))}</small>
       )}
       {Object.entries(failed).map(([id, reason]) => (
         <small key={id} className="delivery failed" title={reason}>
-          Não entregue para {names.get(id) ?? id}
-          {reason.includes('agent_blocked') ? ': está esperando aprovação' : ''}
+          {t.notDeliveredTo(names.get(id) ?? id)}
+          {reason.includes('agent_blocked') ? t.waitingApproval : ''}
         </small>
       ))}
     </>

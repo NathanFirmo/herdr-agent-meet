@@ -43,7 +43,7 @@ by environment variables in `cmd/agent-meet/main.go`.
 | `AgentSource` | `herdr` (socket API) | `HERDR_SOCKET_PATH` |
 | `ScreenParser` (one per agent kind) | `ClaudeCode` | registered in `main.go` |
 | `Summarizer` | `command`, `none` | `SUMMARIZER`, `SUMMARY_COMMAND` |
-| `Speaker` | `kokoro`, `none` | `TTS`, `KOKORO_URL`, `VOICES`, `SPEECH_SPEED` |
+| `Speaker` | `kokoro`, `none` | `TTS`, `KOKORO_URL`, `VOICES`, `SPEECH_SPEED`, `MEET_LANGUAGE` |
 
 To add another summarizer or TTS engine, implement the interface in a new
 adapter and add a case to the matching factory in `main.go`. To support another
@@ -156,7 +156,7 @@ To build the image from source instead:
 task up
 ```
 
-Open http://localhost:8080 and click **Participar agora**. Browsers only allow
+Open http://localhost:8080 and click **Participar agora** (**Join now** with `MEET_LANGUAGE=en-US`). Browsers only allow
 audio after an interaction, so the call starts from that screen.
 
 `task up` builds the app image and starts Kokoro-FastAPI next to it. The app
@@ -187,9 +187,10 @@ Set these in `.env`. Empty values use the defaults.
 | `AGENT_MEET_VERSION` | `latest` | Published image tag used by `task start` |
 | `HERDR_DIR` | `~/.config/herdr` | Directory with `herdr.sock`, mounted in Docker |
 | `HERDR_SOCKET_PATH` | `~/.config/herdr/herdr.sock` | Socket path when running on the host |
+| `MEET_LANGUAGE` | `pt-BR` | Language of the call as a BCP 47 tag (`en-US`, `en-GB`, `es-ES`...): UI, voice dictation, summaries and the briefing new agents get. The UI and fixed lines ship in Portuguese and English; other languages fall back to English text while agents and summaries reply in the chosen language |
 | `TTS` | `kokoro` | `kokoro`, or `none` for captions only |
 | `KOKORO_URL` | `http://localhost:8880` | Kokoro-FastAPI URL (set by Compose in Docker) |
-| `VOICES` | `pm_alex,pf_dora,pm_santa` | Kokoro voices, assigned to agents in turn |
+| `VOICES` | voices for `MEET_LANGUAGE` | Kokoro voices, assigned to agents in turn; Kokoro speaks English, Spanish, French, Hindi, Italian, Japanese, Portuguese and Chinese |
 | `SPEECH_SPEED` | `1.1` | Speech speed |
 | `SUMMARIZER` | `command` when `SUMMARY_COMMAND` is set, else `none` | `command` or `none` (speaks the raw text) |
 | `SUMMARY_COMMAND` | | Shell command that reads the prompt on stdin and prints the summary |

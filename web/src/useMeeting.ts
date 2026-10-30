@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChatMessage, MeetEvent, Participant, Speech } from './types'
+import { t } from './i18n'
 
 const MIN_CAPTION_MS = 2500
 const MS_PER_CHAR = 60
@@ -168,7 +169,7 @@ export function useMeeting(joined: boolean, held: boolean) {
       for (const participant of list) {
         const previous = statuses.current.get(participant.id)
         if (announce && previous && previous !== 'blocked' && participant.status === 'blocked') {
-          pushToast(`${participant.name} levantou a mão`)
+          pushToast(t.raisedHand(participant.name))
         }
         statuses.current.set(participant.id, participant.status)
       }

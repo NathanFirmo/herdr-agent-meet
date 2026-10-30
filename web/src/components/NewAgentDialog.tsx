@@ -1,6 +1,7 @@
 import { Loader2, X } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { DirInput } from './DirInput'
+import { t } from '../i18n'
 
 const DEFAULT_COMMAND = 'claude'
 const LAST_COMMAND_KEY = 'agent-meet:last-command'
@@ -45,7 +46,7 @@ export function NewAgentDialog({ dirs, onLaunch, onClose }: NewAgentDialogProps)
       rememberCommand(command.trim())
       onClose()
     } catch (failure) {
-      setError(failure instanceof Error && failure.message ? failure.message : 'Não foi possível iniciar o agente.')
+      setError(failure instanceof Error && failure.message ? failure.message : t.launchFailed)
       setLaunching(false)
     }
   }
@@ -54,20 +55,20 @@ export function NewAgentDialog({ dirs, onLaunch, onClose }: NewAgentDialogProps)
     <div className="dialog-backdrop" onMouseDown={(event) => event.target === event.currentTarget && !launching && onClose()}>
       <form className="dialog" onSubmit={submit}>
         <header>
-          <h2>Novo agente</h2>
-          <button type="button" className="icon" onClick={onClose} disabled={launching} aria-label="Fechar">
+          <h2>{t.newAgent}</h2>
+          <button type="button" className="icon" onClick={onClose} disabled={launching} aria-label={t.close}>
             <X size={20} />
           </button>
         </header>
-        <p className="dialog-hint">Abre um workspace novo no Herdr e o agente entra na chamada.</p>
+        <p className="dialog-hint">{t.newAgentHint}</p>
 
         <label>
-          Nome
-          <input autoFocus value={name} maxLength={40} onChange={(event) => setName(event.target.value)} placeholder="Ex.: Revisor do checkout" />
+          {t.name}
+          <input autoFocus value={name} maxLength={40} onChange={(event) => setName(event.target.value)} placeholder={t.namePlaceholder} />
         </label>
 
         <label>
-          Comando
+          {t.command}
           <input
             className="mono"
             value={command}
@@ -75,33 +76,33 @@ export function NewAgentDialog({ dirs, onLaunch, onClose }: NewAgentDialogProps)
             placeholder="claude"
             spellCheck={false}
           />
-          <small className="field-hint">Roda no shell do workspace novo: aliases e flags funcionam.</small>
+          <small className="field-hint">{t.commandHint}</small>
         </label>
 
         <label>
-          Pasta
+          {t.folder}
           <DirInput value={dir} onChange={setDir} known={dirs} />
-          <small className="field-hint">Tab completa a pasta, como no terminal.</small>
+          <small className="field-hint">{t.folderHint}</small>
         </label>
 
         <label>
-          Primeira mensagem <small>(opcional)</small>
-          <textarea rows={3} value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="O que ele deve fazer ao entrar" />
+          {t.firstMessage} <small>{t.optional}</small>
+          <textarea rows={3} value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder={t.firstMessagePlaceholder} />
         </label>
 
         {error && <p className="dialog-error">{error}</p>}
 
         <footer>
           <button type="button" className="text-button" onClick={onClose} disabled={launching}>
-            Cancelar
+            {t.cancel}
           </button>
           <button type="submit" className="primary-button" disabled={!name.trim() || !command.trim() || launching}>
             {launching ? (
               <>
-                <Loader2 size={16} className="spin" /> Iniciando…
+                <Loader2 size={16} className="spin" /> {t.launching}
               </>
             ) : (
-              'Iniciar agente'
+              t.launchAgent
             )}
           </button>
         </footer>

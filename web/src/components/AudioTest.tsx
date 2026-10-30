@@ -1,5 +1,6 @@
 import { Loader2, Volume2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { t } from '../i18n'
 
 type State = { kind: 'idle' } | { kind: 'loading' } | { kind: 'playing' } | { kind: 'error'; message: string }
 
@@ -15,11 +16,11 @@ export function AudioTest({ variant = 'dark' }: { variant?: 'dark' | 'light' }) 
     try {
       const response = await fetch('/api/audio-test')
       if (response.status === 204) {
-        setState({ kind: 'error', message: 'A voz está desativada (TTS=none). Só legendas.' })
+        setState({ kind: 'error', message: t.ttsOff })
         return
       }
       if (!response.ok) {
-        setState({ kind: 'error', message: 'O serviço de voz não respondeu. Se acabou de subir, aguarde alguns segundos.' })
+        setState({ kind: 'error', message: t.ttsDown })
         return
       }
       const url = URL.createObjectURL(await response.blob())
@@ -32,7 +33,7 @@ export function AudioTest({ variant = 'dark' }: { variant?: 'dark' | 'light' }) 
       await element.play()
       setState({ kind: 'playing' })
     } catch {
-      setState({ kind: 'error', message: 'Não consegui tocar o áudio neste navegador.' })
+      setState({ kind: 'error', message: t.playFailed })
     }
   }
 
@@ -40,7 +41,7 @@ export function AudioTest({ variant = 'dark' }: { variant?: 'dark' | 'light' }) 
     <div className={`audio-test ${variant}`}>
       <button onClick={test} disabled={state.kind === 'loading'}>
         {state.kind === 'loading' ? <Loader2 size={18} className="spin" /> : <Volume2 size={18} />}
-        {state.kind === 'playing' ? 'Tocando…' : 'Testar áudio'}
+        {state.kind === 'playing' ? t.playing : t.testAudio}
       </button>
       {state.kind === 'error' && <small>{state.message}</small>}
     </div>

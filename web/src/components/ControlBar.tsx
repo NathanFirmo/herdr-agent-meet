@@ -1,5 +1,6 @@
 import { Captions, Info, MessageSquareText, Mic, MicOff, PhoneOff, Users, Volume2, VolumeX } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { formatTime, t } from '../i18n'
 
 export type Panel = 'people' | 'chat' | 'info' | null
 
@@ -34,30 +35,30 @@ export function ControlBar(props: ControlBarProps) {
           active={props.micOn}
           onClick={props.onToggleMic}
           disabled={!props.micSupported}
-          label={!props.micSupported ? 'Ditado por voz só funciona no Chrome' : props.micOn ? 'Desativar microfone' : 'Ditar mensagem por voz'}
+          label={!props.micSupported ? t.micUnsupported : props.micOn ? t.micOff : t.dictate}
         >
           {props.micOn ? <Mic size={20} /> : <MicOff size={20} />}
         </RoundButton>
-        <RoundButton active={!props.muted} onClick={props.onToggleMuted} label={props.muted ? 'Ouvir agentes' : 'Silenciar agentes'}>
+        <RoundButton active={!props.muted} onClick={props.onToggleMuted} label={props.muted ? t.listenAgents : t.muteAgents}>
           {props.muted ? <VolumeX size={20} /> : <Volume2 size={20} />}
         </RoundButton>
-        <RoundButton active={!props.captions} highlighted={props.captions} onClick={props.onToggleCaptions} label="Legendas">
+        <RoundButton active={!props.captions} highlighted={props.captions} onClick={props.onToggleCaptions} label={t.captions}>
           <Captions size={20} />
         </RoundButton>
-        <button className="leave" onClick={props.onLeave} title="Sair da chamada">
+        <button className="leave" onClick={props.onLeave} title={t.leave}>
           <PhoneOff size={20} />
         </button>
       </div>
 
       <div className="side-controls">
-        <IconButton active={props.panel === 'info'} onClick={() => togglePanel('info')} label="Detalhes da reunião">
+        <IconButton active={props.panel === 'info'} onClick={() => togglePanel('info')} label={t.meetingDetails}>
           <Info size={22} />
         </IconButton>
-        <IconButton active={props.panel === 'people'} onClick={() => togglePanel('people')} label="Participantes">
+        <IconButton active={props.panel === 'people'} onClick={() => togglePanel('people')} label={t.participants}>
           <Users size={22} />
           <span className="count">{props.participantCount}</span>
         </IconButton>
-        <IconButton active={props.panel === 'chat'} onClick={() => togglePanel('chat')} label="Chat">
+        <IconButton active={props.panel === 'chat'} onClick={() => togglePanel('chat')} label={t.chat}>
           <MessageSquareText size={22} />
         </IconButton>
       </div>
@@ -90,7 +91,7 @@ function IconButton(props: { active: boolean; onClick: () => void; label: string
 }
 
 function useClock() {
-  const format = () => new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  const format = () => formatTime(new Date())
   const [now, setNow] = useState(format)
   useEffect(() => {
     const timer = setInterval(() => setNow(format()), 10_000)

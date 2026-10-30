@@ -8,6 +8,7 @@ import { AudioTest } from './AudioTest'
 import { Chat } from './Chat'
 import { NewAgentDialog } from './NewAgentDialog'
 import type { Panel } from './ControlBar'
+import { t } from '../i18n'
 
 interface SidePanelProps {
   panel: Exclude<Panel, null>
@@ -24,14 +25,13 @@ interface SidePanelProps {
   onClose: () => void
 }
 
-const TITLES = { people: 'Participantes', chat: 'Mensagens na chamada', info: 'Detalhes da reunião' }
 
 export function SidePanel({ panel, participants, speeches, messages, connected, onSend, onRename, onRemove, onLaunch, draft, onDraftChange, onClose }: SidePanelProps) {
   return (
     <aside className="side-panel">
       <header>
-        <h2>{TITLES[panel]}</h2>
-        <button className="icon" onClick={onClose} aria-label="Fechar">
+        <h2>{{ people: t.participants, chat: t.chatTitle, info: t.meetingDetails }[panel]}</h2>
+        <button className="icon" onClick={onClose} aria-label={t.close}>
           <X size={20} />
         </button>
       </header>
@@ -39,10 +39,10 @@ export function SidePanel({ panel, participants, speeches, messages, connected, 
       {panel === 'chat' && <Chat participants={participants} speeches={speeches} messages={messages} onSend={onSend} draft={draft} onDraftChange={onDraftChange} />}
       {panel === 'info' && (
         <div className="panel-body info">
-          <p>Seus agentes do Herdr entram na chamada automaticamente e reportam o que estão fazendo.</p>
-          <p>No chat, marque um agente com @ para mandar uma mensagem direto para a sessão dele.</p>
+          <p>{t.infoJoin}</p>
+          <p>{t.infoChat}</p>
           <p>
-            Conexão com o servidor: <strong>{connected ? 'ativa' : 'reconectando…'}</strong>
+            {t.serverConnection} <strong>{connected ? t.connected : t.reconnecting}</strong>
           </p>
           <AudioTest variant="light" />
         </div>
@@ -66,17 +66,17 @@ function People({ participants, onRename, onRemove, onLaunch }: PeopleProps) {
     <ul className="panel-body people">
       <li className="add-agent">
         <button className="add-agent-button" onClick={() => setAdding(true)}>
-          <UserPlus size={18} /> Novo agente
+          <UserPlus size={18} /> {t.newAgent}
         </button>
         {adding && <NewAgentDialog dirs={dirs} onLaunch={onLaunch} onClose={() => setAdding(false)} />}
       </li>
       <li>
         <span className="mini-avatar" style={{ background: avatarColor('self') }}>
-          V
+          {initials(t.you)}
         </span>
         <div>
-          <strong>Você</strong>
-          <small>Organizador da reunião</small>
+          <strong>{t.you}</strong>
+          <small>{t.organizer}</small>
         </div>
       </li>
       {participants.map((participant) => (
@@ -122,7 +122,7 @@ function EditableName({ participant, onRename }: { participant: Participant; onR
     <button
       className="name-button"
       onClick={startEditing}
-      title={participant.originalName ? `Renomear (original: ${participant.originalName})` : 'Renomear'}
+      title={participant.originalName ? t.renameFrom(participant.originalName) : t.rename}
     >
       <strong>{participant.name}</strong>
       <Pencil size={13} className="pencil" />
@@ -147,7 +147,7 @@ function PersonRow({ participant, onRename, onRemove }: PersonRowProps) {
     try {
       await onRemove(participant.id)
     } catch {
-      setError('Não foi possível fechar o pane.')
+      setError(t.closeFailed)
       setRemoving(false)
     }
   }
@@ -160,7 +160,7 @@ function PersonRow({ participant, onRename, onRemove }: PersonRowProps) {
       <div>
         <EditableName participant={participant} onRename={onRename} />
         {confirming ? (
-          <small className="remove-warning">{error ?? 'Encerrar agente? O pane será fechado no Herdr.'}</small>
+          <small className="remove-warning">{error ?? t.endAgentWarning}</small>
         ) : participant.activity ? (
           <ActivityBadge activity={participant.activity} compact />
         ) : (
@@ -171,10 +171,10 @@ function PersonRow({ participant, onRename, onRemove }: PersonRowProps) {
         {confirming && (
           <span className="remove-actions">
             <button className="text-button" onClick={() => setConfirming(false)} disabled={removing}>
-              Cancelar
+              {t.cancel}
             </button>
             <button className="danger-button" onClick={remove} disabled={removing}>
-              {removing ? 'Encerrando…' : 'Encerrar'}
+              {removing ? t.ending : t.end}
             </button>
           </span>
         )}
@@ -182,7 +182,7 @@ function PersonRow({ participant, onRename, onRemove }: PersonRowProps) {
       {participant.status === 'blocked' && <Hand size={18} className="hand-icon" />}
       {participant.status === 'working' && <Loader2 size={18} className="spin" />}
       {!confirming && (
-        <button className="icon remove" onClick={() => setConfirming(true)} aria-label={`Encerrar ${participant.name}`} title="Encerrar agente">
+        <button className="icon remove" onClick={() => setConfirming(true)} aria-label={t.endNamed(participant.name)} title={t.endAgent}>
           <Trash2 size={18} />
         </button>
       )}

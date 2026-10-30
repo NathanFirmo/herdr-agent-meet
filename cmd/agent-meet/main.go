@@ -37,16 +37,17 @@ func run() error {
 	listenAddr := env("LISTEN_ADDR", ":8080")
 	staticDir := env("STATIC_DIR", "web/dist")
 	uploadDir := env("UPLOAD_DIR", filepath.Join(os.TempDir(), "agent-meet"))
+	locale := meet.NewLocale(env("MEET_LANGUAGE", meet.DefaultLanguage))
 	interval, err := time.ParseDuration(env("POLL_INTERVAL", "3s"))
 	if err != nil {
 		return fmt.Errorf("POLL_INTERVAL: %w", err)
 	}
 
-	summary, err := newSummarizer()
+	summary, err := newSummarizer(locale.Language)
 	if err != nil {
 		return err
 	}
-	speaker, err := newSpeaker()
+	speaker, err := newSpeaker(locale.Language)
 	if err != nil {
 		return err
 	}
@@ -63,7 +64,8 @@ func run() error {
 		Summarizer: summary,
 		Speaker:    speaker,
 		Names:      store.NewJSONNames(filepath.Join(uploadDir, "names.json")),
-		Voices:     strings.Split(env("VOICES", "pm_alex,pf_dora,pm_santa"), ","),
+		Voices:     voices(locale.Language),
+		Locale:     locale,
 	})
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -80,6 +82,7 @@ func run() error {
 
 	slog.Info("agent meet listening",
 		"addr", listenAddr,
+		"language", locale.Language,
 		"herdr_socket", socketPath,
 		"upload_dir", uploadDir,
 		"transcripts", env("CLAUDE_TRANSCRIPT_DIRS", filepath.Join(home, ".claude*")),
@@ -102,7 +105,7 @@ func newMessageSource(home string) meet.MessageSource {
 	return transcript.NewClaude(strings.Split(dirs, ":"))
 }
 
-func newSummarizer() (meet.Summarizer, error) {
+func newSummarizer(language string) (meet.Summarizer, error) {
 	command := strings.TrimSpace(os.Getenv("SUMMARY_COMMAND"))
 	defaultKind := "none"
 	if command != "" {
@@ -114,7 +117,7 @@ func newSummarizer() (meet.Summarizer, error) {
 		if command == "" {
 			return nil, errors.New("SUMMARIZER=command requires SUMMARY_COMMAND")
 		}
-		return summarizer.NewCommand(command), nil
+		return summarizer.NewCommand(command, language), nil
 	case "none":
 		return summarizer.Passthrough{}, nil
 	default:
@@ -122,19 +125,33 @@ func newSummarizer() (meet.Summarizer, error) {
 	}
 }
 
-func newSpeaker() (meet.Speaker, error) {
+func newSpeaker(language string) (meet.Speaker, error) {
 	switch kind := env("TTS", "kokoro"); kind {
 	case "kokoro":
 		speed, err := strconv.ParseFloat(env("SPEECH_SPEED", "1.1"), 64)
 		if err != nil {
 			return nil, fmt.Errorf("SPEECH_SPEED: %w", err)
 		}
-		return tts.NewKokoro(env("KOKORO_URL", "http://localhost:8880"), speed), nil
+		return tts.NewKokoro(env("KOKORO_URL", "http://localhost:8880"), speed, language), nil
 	case "none":
 		return tts.Silent{}, nil
 	default:
 		return nil, fmt.Errorf("unknown TTS %q (use kokoro or none)", kind)
 	}
+}
+
+// voices are the ones listed in VOICES, or the default Kokoro voices for the language.
+func voices(language string) []string {
+	var listed []string
+	for _, voice := range strings.Split(os.Getenv("VOICES"), ",") {
+		if voice = strings.TrimSpace(voice); voice != "" {
+			listed = append(listed, voice)
+		}
+	}
+	if len(listed) == 0 {
+		return tts.KokoroVoices(language)
+	}
+	return listed
 }
 
 func env(key, fallback string) string {
